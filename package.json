@@ -18,6 +18,7 @@
   "homepage": "https://github.com/panda-re/pandeagle#readme",
   "dependencies": {
     "express": "^4.17.1",
-    "pg": "^8.4.0"
+    "pg": "^8.4.0",
+    "pug": "^3.0.0"
   }
 }

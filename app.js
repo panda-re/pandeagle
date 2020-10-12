@@ -1,7 +1,15 @@
 const express = require('express');
 const { Pool } = require('pg');
+const path = require('path');
 const app = express();
-//process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0;
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0;
+
+// view engine setup
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'pug');
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(express.static(path.join(__dirname, 'public')));
 
 const port = 3000;
 const pool = new Pool({
@@ -18,13 +26,16 @@ pool.on('error', (err, client) => {
 });
 
 app.get('/', (req, res) => {
-    res.send('Hello World!');
-});
-
-app.get('/pgTest', (req, res) => {
     pool
         .query('SELECT * FROM Threads')
-        .then(result => res.send(result.rows[0]))
+        .then((result) => {
+            console.log(result.rows[0]);
+            res.render('index',{
+                //data: result.rows[0]
+                title: 'PANDeagle',
+                data: result.rows
+            });
+        })
         .catch((err) => {
             console.log(err);
             console.log("pool.idleCount: " + pool.idleCount);
