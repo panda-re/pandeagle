@@ -27,14 +27,59 @@ pool.on('error', (err, client) => {
 
 app.get('/', (req, res) => {
     pool
-        .query('SELECT * FROM Threads')
-        .then((result) => {
-            console.log(result.rows[0]);
-            res.render('index',{
-                //data: result.rows[0]
-                title: 'PANDeagle',
-                data: result.rows
-            });
+        .query('SELECT * FROM Executions')
+        .then((exe) => {
+            let exeID = exe.rows[0].execution_id;
+            pool
+                .query('SELECT * FROM Threads WHERE process_id IN (SELECT process_id FROM Processes WHERE execution_id = $1)', [exeID])
+                .then((thr) => {
+                    thr.rows.forEach(element => {
+                        element.name = element.names.join(' ');
+                    });
+                    res.render('index', {
+                        title: 'PANDeagle',
+                        executions: exe.rows,
+                        threads: thr.rows
+                    });
+                })
+                .catch((err) => {
+                    console.log(err);
+                    console.log("pool.idleCount: " + pool.idleCount);
+                    res.status(400);
+                    res.json(err);
+                });
+        })
+        .catch((err) => {
+            console.log(err);
+            console.log("pool.idleCount: " + pool.idleCount);
+            res.status(400);
+            res.json(err);
+        });
+});
+
+app.get('/:executionName', (req, res) => {
+    console.log("HELLO");
+    pool
+        .query('SELECT * FROM Executions')
+        .then((exe) => {
+            pool
+                .query('SELECT * FROM Threads WHERE process_id IN (SELECT process_id FROM Processes WHERE execution_id = (SELECT execution_id FROM Executions WHERE name = $1))', [req.params.executionName])
+                .then((thr) => {
+                    thr.rows.forEach(element => {
+                        element.name = element.names.join(' ');
+                    });
+                    res.render('index', {
+                        title: 'PANDeagle',
+                        executions: exe.rows,
+                        threads: thr.rows
+                    });
+                })
+                .catch((err) => {
+                    console.log(err);
+                    console.log("pool.idleCount: " + pool.idleCount);
+                    res.status(400);
+                    res.json(err);
+                });
         })
         .catch((err) => {
             console.log(err);

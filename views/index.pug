@@ -5,6 +5,7 @@ html
     script(src='js/jquery-3.5.1.min.js')
     script(src='js/bootstrap.min.js')
     script(src='js/popper.min.js')
+    script(src='js/index.js')
     link(rel='stylesheet' href='css/bootstrap.min.css')
   body
     block content
@@ -15,8 +16,10 @@ html
         
         form.form-inline.my-2.my-lg-0
           select.form-control.mr-sm-2
-            each execution in data
-              option #{execution.names[0]}
-        
+            each execution in executions
+              option(value = execution.execution_id) #{execution.name}
 
-
+      form.form-inline.my-2.my-lg-0
+          select.form-control.mr-sm-2(onchange = 'selectThread(this.value)')
+            each thread in threads
+              option(value = thread.thread_id) #{thread.name}
