@@ -5,7 +5,7 @@ function setup() {
 
 function getExecutions() {
     $.ajax({
-        url: 'app',
+        url: 'executions',
         type: 'GET',
         dataType: 'JSON',
         success: (executions) => {
@@ -19,12 +19,13 @@ function getExecutions() {
     });
 }
 
-function getThreads(executionID) {
+function getThreads() {
     $.ajax({
-        url: 'defaultExecution',
+        url: 'executions/1/threadslices',
         type: 'GET',
         dataType: 'JSON',
         success: (threads) => {
+            console.log(JSON.stringify(threads))
             threads.forEach(thread => {
                 $('#threadSelect').append('<option value="' + thread.thread_id + '">' + thread.name + '</option>');
             });

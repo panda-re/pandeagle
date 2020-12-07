@@ -22,7 +22,7 @@ pool.on('error', (err, client) => {
     console.error('Unexpected error on idle client', err);
 });
 
-app.get('/app', (req, res) => {
+app.get('/executions', (req, res) => {
     pool
         .query('SELECT * FROM Executions')
         .then((exe) => {
@@ -37,38 +37,43 @@ app.get('/app', (req, res) => {
         });
 });
 
-app.get('/defaultExecution', (req, res) => {
+
+app.get('/executions/:executionId/threadslices', (req, res) => {
     pool
-        .query('SELECT * FROM Threads WHERE process_id IN (SELECT process_id FROM Processes WHERE execution_id = (SELECT execution_id FROM Executions LIMIT 1))')
-        .then((thr) => {
-            thr.rows.forEach(element => {
-                element.name = element.names.join(' ');
-            });
+        .query(`SELECT t.thread_id, t.names, json_agg(ts ORDER BY start_execution_offset) as thread_slices FROM ThreadSlice ts 
+                    JOIN Threads t ON ts.thread_id = t.thread_id 
+                    JOIN processes p ON t.process_id = p.process_id 
+                    JOIN executions e ON p.execution_id = e.execution_id 
+                    WHERE e.execution_id = $1
+                    GROUP BY t.thread_id, t.names 
+                    ORDER BY thread_id`, [req.params.executionId])
+        .then((exe) => {
             res.status(200);
-            res.json(thr.rows);
+            res.json(exe.rows);
         })
         .catch((err) => {
+            console.log(err);
+            console.log("pool.idleCount: " + pool.idleCount);
             res.status(400);
             res.json(err);
         });
 });
 
-app.get('/:executionID', (req, res) => {
-    pool
-        .query('SELECT * FROM Threads WHERE process_id IN (SELECT process_id FROM Processes WHERE execution_id = $1)', [req.params.executionID])
-        .then((thr) => {
-            thr.rows.forEach(element => {
-                element.name = element.names.join(' ');
-            });
-            res.status(200);
-            res.json(thr.rows);
-        })
-        .catch((err) => {
-            res.status(400);
-            res.json(err);
-        });
-});
-
+// app.get('/defaultExecution', (req, res) => {
+//     pool
+//         .query('SELECT * FROM Threads WHERE process_id IN (SELECT process_id FROM Processes WHERE execution_id = (SELECT execution_id FROM Executions LIMIT 1))')
+//         .then((thr) => {
+//             thr.rows.forEach(element => {
+//                 element.name = element.names.join(' ');
+//             });
+//             res.status(200);
+//             res.json(thr.rows);
+//         })
+//         .catch((err) => {
+//             res.status(400);
+//             res.json(err);
+//         });
+// });
 
 app.listen(port, () => {
     console.log(`Example app listening at http://localhost:${port}`);
