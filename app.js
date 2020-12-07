@@ -2,6 +2,7 @@ const express = require('express');
 const { Pool } = require('pg');
 const path = require('path');
 const app = express();
+const conn = require('./database.js');
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = 0;
 
 app.use(express.json());
@@ -9,22 +10,9 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 const port = 3000;
-const pool = new Pool({
-    user: 'shenx',
-    host: 'pandeagle.csse.rose-hulman.edu',
-    database: 'pandelephant',
-    password: '123456',
-    port: 5432,
-    ssl: true
-});
-
-pool.on('error', (err, client) => {
-    console.error('Unexpected error on idle client', err);
-});
 
 app.get('/executions', (req, res) => {
-    pool
-        .query('SELECT * FROM Executions')
+    conn.getAllExecutions()
         .then((exe) => {
             res.status(200);
             res.json(exe.rows);
@@ -37,16 +25,8 @@ app.get('/executions', (req, res) => {
         });
 });
 
-
 app.get('/executions/:executionId/threadslices', (req, res) => {
-    pool
-        .query(`SELECT t.thread_id, t.names, json_agg(ts ORDER BY start_execution_offset) as thread_slices FROM ThreadSlice ts 
-                    JOIN Threads t ON ts.thread_id = t.thread_id 
-                    JOIN processes p ON t.process_id = p.process_id 
-                    JOIN executions e ON p.execution_id = e.execution_id 
-                    WHERE e.execution_id = $1
-                    GROUP BY t.thread_id, t.names 
-                    ORDER BY thread_id`, [req.params.executionId])
+    conn.getThreadSlicesByExecutionId(req.params.executionId)
         .then((exe) => {
             res.status(200);
             res.json(exe.rows);
