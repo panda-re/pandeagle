@@ -27,7 +27,7 @@ function getThreads() {
         success: (threads) => {
             // console.log(JSON.stringify(threads))
             threads.forEach(thread => {
-                $('#threadSelect').append('<option value="' + thread.thread_id + '">' + thread.name + '</option>');
+                $('#threadSelect').append('<option value="' + thread.thread_id + '">' + thread.names.join(' ') + '</option>');
             });
         },
         error: (xhr, status, err) => {
