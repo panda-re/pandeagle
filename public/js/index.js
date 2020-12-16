@@ -25,7 +25,7 @@ function getThreads() {
         type: 'GET',
         dataType: 'JSON',
         success: (threads) => {
-            console.log(JSON.stringify(threads))
+            // console.log(JSON.stringify(threads))
             threads.forEach(thread => {
                 $('#threadSelect').append('<option value="' + thread.thread_id + '">' + thread.name + '</option>');
             });

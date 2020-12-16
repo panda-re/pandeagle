@@ -11,9 +11,11 @@ class Axes extends Container {
   }
   // SET GET
   get domains() {
+    console.log(this.data.pop())
     return {
       x: d3.extent(d3.merge(this.data.map((d) => d.x))),
-      y: d3.extent(d3.merge(this.data.map((d) => d.y))).map((v, i, ar) => v + (!i ? -this.diff(ar) * 0.05 : this.diff(ar) * 0.05))
+      // y: d3.extent(d3.merge(this.data.map((d) => d.y))).map((v, i, ar) => v + (!i ? -this.diff(ar) * 0.05 : this.diff(ar) * 0.05))
+      y: d3.extent([...this.data.pop().threads])
     };
   }
   get xScale() {
