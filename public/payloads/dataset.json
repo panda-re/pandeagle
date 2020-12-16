@@ -6,13 +6,13 @@
         "NonVoters": ".21"
     },
     {
-        "Race": "chrom_id",
+        "Race": "(spawn) chrom_id",
         "AllAdults": ".35",
         "LikelyVoters": ".19",
         "NonVoters": ".56"
     },
     {
-        "Race": "ata_id",
+        "Race": "(spawn) ata_id",
         "AllAdults": ".15",
         "LikelyVoters": ".13",
         "NonVoters": ".18"

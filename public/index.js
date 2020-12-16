@@ -24,13 +24,13 @@ function DotPlot(dataset) {
 
   // Chart dimensions
   let dimensions = {
-    width: 1000,
+    width: 1250,
     height: 1000 * 0.334,
     margin: {
       top: 90,
       right: 15,
       bottom: 60,
-      left: 150,
+      left: 550,
     },
   }
   dimensions.boundedWidth = dimensions.width - dimensions.margin.left - dimensions.margin.right
