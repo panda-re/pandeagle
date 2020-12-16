@@ -55,12 +55,12 @@ function DotPlot(dataset) {
   const yScale = d3.scaleBand()
     .domain(dataset.map(yAccessor))
     .range([0, dimensions.boundedHeight])
-    .paddingInner(0.5)
-    .paddingOuter(1.5)
+  // .paddingInner(0.5)
+  // .paddingOuter(1.5)
 
   // Draw data
   const lineGenerator = d3.line()
-  const axisLinePath = d => lineGenerator([[xScale(d) + 0.5, 0], [xScale(d) + 0.5, dimensions.boundedHeight]])
+  const axisLinePath = d => lineGenerator([[0, yScale(d) + 0.5], [dimensions.boundedWidth, yScale(d) + 0.5]])
   const dotsLinePathNVAA = d => lineGenerator([[xScale(xAccessorNV(d)), 0], [xScale(xAccessorAA(d)), 0]])
   const dotsLinePathAALV = d => lineGenerator([[xScale(xAccessorAA(d)), 0], [xScale(xAccessorLV(d)), 0]])
 
@@ -122,7 +122,7 @@ function DotPlot(dataset) {
   const gridLines = bounds.append("g")
     .attr("class", "grid-lines")
   gridLines.selectAll("path")
-    .data(xScale.ticks())
+    .data(yScale.domain())
     .enter().append("path")
     .attr("class", "grid-line")
     .attr("d", axisLinePath)
