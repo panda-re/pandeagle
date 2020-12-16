@@ -97,7 +97,7 @@ function DotPlot(dataset) {
     .attr("cx", d => xScale(xAccessorAA(d)))
 
   // Make axes
-  const xAxisGenerator = d3.axisTop()
+  const xAxisGenerator = d3.axisBottom()
     .scale(xScale)
     .tickFormat(d3.format(".0%"))
     .ticks(5)
@@ -108,6 +108,7 @@ function DotPlot(dataset) {
 
   const xAxis = bounds.append("g")
     .attr("class", "x-axis")
+    .attr("transform", `translate(0,${dimensions.boundedHeight})`)
     .call(xAxisGenerator)
 
   const yAxis = bounds.append("g")
