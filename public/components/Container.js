@@ -165,7 +165,7 @@ class Container {
         .append("text")
         .attr("transform", "rotate(-90)")
         .attr("x", -obj.layout.extents.height * 12 / 13)
-        .attr("dy", 20)
+        .attr("dy", -40)
         .attr("fill", "rgba(30,30,30,0.6)")
         .attr("text-anchor", "left")
         .attr("alignment-baseline", "baseline")
@@ -174,7 +174,7 @@ class Container {
     } else {
       gLab.enter()
         .append("text")
-        .attr("y", obj.layout.extents.height - 5)
+        .attr("y", obj.layout.extents.height + 40)
         .attr("x", obj.layout.extents.height / 13)
         .attr("fill", "rgba(30,30,30,0.6)")
         .attr("text-anchor", "left")
