@@ -30,7 +30,7 @@ function DotPlot(dataset) {
       top: 90,
       right: 15,
       bottom: 60,
-      left: 65,
+      left: 150,
     },
   }
   dimensions.boundedWidth = dimensions.width - dimensions.margin.left - dimensions.margin.right
@@ -112,7 +112,7 @@ function DotPlot(dataset) {
 
   const yAxis = bounds.append("g")
     .attr("class", "y-axis")
-    .attr("transform", "tranlate(-20, 0)")
+    .attr("transform", "translate(-20, 0)")
     .call(yAxisGenerator)
     .select(".domain")
     .attr("opacity", 0)
@@ -125,6 +125,22 @@ function DotPlot(dataset) {
     .enter().append("path")
     .attr("class", "grid-line")
     .attr("d", axisLinePath)
+
+  // text labels for the x and y axes
+  svg.append("text")
+    .attr("transform",
+      "translate(" + (dimensions.width / 2) + " ," +
+      (dimensions.height + dimensions.margin.top + 20) + ")")
+    .style("text-anchor", "middle")
+    .text("Date");
+
+  svg.append("text")
+    .attr("transform", "rotate(-90)")
+    .attr("y", 0 - dimensions.margin.left)
+    .attr("x", 0 - (dimensions.height / 2))
+    .attr("dy", "1em")
+    .style("text-anchor", "middle")
+    .text("Value");
 
   // legend
   // const legendLabels = [

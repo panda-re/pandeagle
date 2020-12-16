@@ -17,13 +17,13 @@ text {
 }
 
 .dots-line-AALV {
-    stroke: "#4A89DC";
+    stroke: #4A89DC;
     stroke-width: 5px;
     opacity: 0.4;
 }
 
 .dots-line-NVAA {
-    stroke: "#D770AD";
+    stroke: #D770AD;
     stroke-width: 5px;
     opacity: 0.4;
 }
@@ -34,15 +34,15 @@ circle {
 }
 
 .non-voters {
-    fill: "#D770AD";
+    fill: #D770AD;
 }
 
 .likely-voters {
-    fill: "#4A89DC";
+    fill: #4A89DC;
 }
 
 .all-adults {
-    fill: "#4A89DC";
+    fill: #4A89DC;
 }
 
 div.tooltip {
