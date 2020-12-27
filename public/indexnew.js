@@ -12,7 +12,7 @@ function dotPlot(svg, dataset) {
 
     const idAccessor = data => +data["thread_id"];
     const nameAccessor = data => data["names"].join(" ");
-    const sliceAccessor = data => data["thread_slices"];
+    const sliceAccessor = data => data["thread_slices"]; 
 
     const bounds = svg.append("g")
     .attr("transform", "translate(200, 100)");
