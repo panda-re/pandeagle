@@ -1,0 +1,13 @@
+.tick text {
+    font-size: 1.4em;
+}
+
+.grid-line {
+    stroke: #272727;
+    opacity: 0.2;
+}
+
+.slice {
+    stroke: #4A89DC;
+    stroke-width: 10px;
+}
