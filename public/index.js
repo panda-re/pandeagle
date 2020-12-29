@@ -1,22 +1,20 @@
 async function init() {
   const data = await d3.json('http://localhost:3000/executions/1/threadslices');
 
-  const width = 1000
-  const height = data.length * 30
   const margin = {
     top: 10,
     right: 20,
     bottom: 30,
     left: 120
   }
+  const width = 1000
+  const height = data.length * 30
+  const dimensions = { margin, height, width }
 
   const svg = d3.select("body")
     .append("svg")
     .attr('height', height)
     .attr('width', width);
-
-  const dimensions = Object.assign({}, { margin }, { height, width })
-  console.log(dimensions)
 
   dotPlot(svg, data, dimensions);
 }
@@ -75,7 +73,7 @@ function dotPlot(svg, data, dimensions) {
 
   // x-axis
   const maxTime = Math.max(...data.map(t => Math.max(...t.thread_slices.map(d => d.end_execution_offset))));
-  const minTime = Math.min(...data.map(t => Math.min(...t.thread_slices.map(d => d.end_execution_offset))));
+  const minTime = Math.min(...data.map(t => Math.min(...t.thread_slices.map(d => d.start_execution_offset))));
 
   const xScale = d3.scaleLinear()
     .domain([minTime, maxTime])
@@ -120,10 +118,9 @@ function dotPlot(svg, data, dimensions) {
 
   const slices = slicesGroup.selectAll("g")
     .data(data)
-    .enter().append("g")
+    .enter().append('g')
     .attr("transform", d => `translate(0, ${(yScale(nameAccessor(d)) + (yScale.bandwidth() / 2))})`)
-
-  slices.append("path")
+    .append("path")
     .attr("class", "slice")
     .attr("d", slicePath)
 
@@ -131,22 +128,30 @@ function dotPlot(svg, data, dimensions) {
   const brush = d3.brushX()
     .extent([[margin.left, 0.5], [width - margin.right, height - margin.bottom + 0.5]])
     .on('brush', brushed)
+    .on('end', brushended)
   svg.append('g')
     .attr('class', 'brush')
     .call(brush)
 
   function brushed({ selection }) {
     if (selection) {
-      const focus = selection.map(xScale.invert).map(Math.floor)
-      console.log(focus)
+      const originalXScale = xScale.copy().domain([minTime, maxTime])
+      const [minOffset, maxOffset] = selection.map(originalXScale.invert).map(Math.floor)
+      const focusedData = data.map(d => ({ ...d, thread_slices: d.thread_slices.filter(x => x.start_execution_offset >= minOffset && x.end_execution_offset <= maxOffset) }))
+
+      xScale.domain([minOffset, maxOffset])
+      slices
+        .data(focusedData)
+        .attr("d", slicePath)
     }
   }
 
   function brushended({ selection }) {
     if (!selection) {
-      xScale
+      xScale.domain([minTime, maxTime])
+      slices
+        .data(data)
+        .attr("d", slicePath)
     }
   }
-
-
 }
