@@ -1,5 +1,5 @@
 async function init() {
-  const data = await d3.json('http://localhost:3000/executions/1/threadslices');
+  const data = await d3.json('http://localhost:3000/executions/1/threadslices')
 
   const margin = {
     top: 10,
@@ -19,37 +19,37 @@ async function init() {
 document.addEventListener('DOMContentLoaded', init)
 
 function renameDuplicates(threadNames) {
-  const nameCounts = new Map();
-  const newNames = [];
+  const nameCounts = new Map()
+  const newNames = []
 
   threadNames.forEach(name => {
-    let count = nameCounts.get(name);
+    let count = nameCounts.get(name)
     if (count == undefined) {
-      nameCounts.set(name, 1);
-      newNames.push(name);
+      nameCounts.set(name, 1)
+      newNames.push(name)
     } else {
-      count++;
-      nameCounts.set(name, count);
-      newNames.push(name + count.toString());
+      count++
+      nameCounts.set(name, count)
+      newNames.push(name + count.toString())
     }
-  });
+  })
 
-  return newNames;
+  return newNames
 }
 
 function dotPlot(data, dimensions) {
   const { width, height, margin, focusHeight } = dimensions
 
-  let threadNames = data.map(data => data["names"].join(" "));
-  threadNames = renameDuplicates(threadNames);
+  let threadNames = data.map(data => data["names"].join(" "))
+  threadNames = renameDuplicates(threadNames)
 
   for (let i = 0; i < data.length; i++) {
-    data[i].newName = threadNames[i];
+    data[i].newName = threadNames[i]
   }
 
-  const nameAccessor = data => data["newName"];
-  const startAccessor = data => data["thread_slices"].map(d => d.start_execution_offset);
-  const endAccessor = data => data["thread_slices"].map(d => d.end_execution_offset);
+  const nameAccessor = data => data["newName"]
+  const startAccessor = data => data["thread_slices"].map(d => d.start_execution_offset)
+  const endAccessor = data => data["thread_slices"].map(d => d.end_execution_offset)
 
   // create new graph
   const chart = d3.select("body")
@@ -60,11 +60,11 @@ function dotPlot(data, dimensions) {
   // y-axis
   const yScale = d3.scaleBand()
     .domain(threadNames)
-    .range([height - margin.bottom, margin.top]);
+    .range([height - margin.bottom, margin.top])
 
   const yAxis = d3.axisLeft()
     .scale(yScale)
-    .tickSize(0);
+    .tickSize(0)
 
   chart.append('g')
     .attr('transform', `translate(${margin.left},0)`)
@@ -72,12 +72,12 @@ function dotPlot(data, dimensions) {
     .call(g => g.select('.domain').remove())
 
   // x-axis
-  const maxTime = Math.max(...data.map(t => Math.max(...t.thread_slices.map(d => d.end_execution_offset))));
-  const minTime = Math.min(...data.map(t => Math.min(...t.thread_slices.map(d => d.start_execution_offset))));
+  const maxTime = Math.max(...data.map(t => Math.max(...t.thread_slices.map(d => d.end_execution_offset))))
+  const minTime = Math.min(...data.map(t => Math.min(...t.thread_slices.map(d => d.start_execution_offset))))
 
   const xScaleRef = d3.scaleLinear()
     .domain([minTime, maxTime])
-    .range([margin.left, width - margin.right]);
+    .range([margin.left, width - margin.right])
 
   const xScale = xScaleRef.copy()
 
@@ -102,17 +102,17 @@ function dotPlot(data, dimensions) {
 
   // slices
   const slicePath = d => {
-    const startPoints = startAccessor(d);
-    const endPoints = endAccessor(d);
+    const startPoints = startAccessor(d)
+    const endPoints = endAccessor(d)
 
     const context = d3.path()
 
     for (let i = 0; i < startPoints.length; i++) {
-      context.moveTo(xScale(startPoints[i]), 0);
-      context.lineTo(xScale(endPoints[i]), 0);
+      context.moveTo(xScale(startPoints[i]), 0)
+      context.lineTo(xScale(endPoints[i]), 0)
     }
 
-    return context;
+    return context
   }
 
   const slicesGroup = chart.append("g")
