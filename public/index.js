@@ -9,14 +9,11 @@ async function init() {
   }
   const width = 1000
   const height = data.length * 30
-  const dimensions = { margin, height, width }
+  const focusHeight = 50
 
-  const svg = d3.select("body")
-    .append("svg")
-    .attr('height', height)
-    .attr('width', width);
+  const dimensions = { margin, height, width, focusHeight }
 
-  dotPlot(svg, data, dimensions);
+  dotPlot(data, dimensions)
 }
 
 document.addEventListener('DOMContentLoaded', init)
@@ -40,8 +37,8 @@ function renameDuplicates(threadNames) {
   return newNames;
 }
 
-function dotPlot(svg, data, dimensions) {
-  const { width, height, margin } = dimensions
+function dotPlot(data, dimensions) {
+  const { width, height, margin, focusHeight } = dimensions
 
   let threadNames = data.map(data => data["names"].join(" "));
   threadNames = renameDuplicates(threadNames);
@@ -55,35 +52,40 @@ function dotPlot(svg, data, dimensions) {
   const endAccessor = data => data["thread_slices"].map(d => d.end_execution_offset);
 
   // create new graph
-  const chart = svg
+  const chart = d3.select("body")
+    .append("svg")
+    .attr('height', height)
+    .attr('width', width)
 
   // y-axis
   const yScale = d3.scaleBand()
     .domain(threadNames)
     .range([height - margin.bottom, margin.top]);
 
-  const yAxisGenerator = d3.axisLeft()
+  const yAxis = d3.axisLeft()
     .scale(yScale)
     .tickSize(0);
 
   chart.append('g')
     .attr('transform', `translate(${margin.left},0)`)
-    .call(yAxisGenerator)
+    .call(yAxis)
     .call(g => g.select('.domain').remove())
 
   // x-axis
   const maxTime = Math.max(...data.map(t => Math.max(...t.thread_slices.map(d => d.end_execution_offset))));
   const minTime = Math.min(...data.map(t => Math.min(...t.thread_slices.map(d => d.start_execution_offset))));
 
-  const xScale = d3.scaleLinear()
+  const xScaleRef = d3.scaleLinear()
     .domain([minTime, maxTime])
     .range([margin.left, width - margin.right]);
 
-  const xAxisGenerator = d3.axisBottom()
+  const xScale = xScaleRef.copy()
+
+  const xAxis = d3.axisBottom()
     .scale(xScale)
 
   chart.append("g")
-    .call(xAxisGenerator)
+    .call(xAxis)
     .attr('class', 'x-axis')
     .attr("transform", `translate(0,${dimensions.height - dimensions.margin.bottom})`)
 
@@ -125,33 +127,40 @@ function dotPlot(svg, data, dimensions) {
     .attr("d", slicePath)
 
   // Brush
+  const brushPanel = d3.select("body")
+    .append("svg")
+    .attr('height', focusHeight)
+    .attr('width', width)
+
   const brush = d3.brushX()
-    .extent([[margin.left, 0.5], [width - margin.right, height - margin.bottom + 0.5]])
-    .on('brush', brushed)
-    .on('end', brushended)
-  svg.append('g')
+    .extent([[margin.left, 0], [width - margin.right, focusHeight - margin.bottom]])
+    .on("brush", brushed)
+    .on("end", brushed)
+
+  brushPanel.append("g")
+    .call(xAxis)
+    .attr('class', 'x-axis')
+    .attr("transform", `translate(0, ${focusHeight - margin.bottom})`)
+
+  brushPanel.append("g")
     .attr('class', 'brush')
     .call(brush)
 
   function brushed({ selection }) {
-    if (selection) {
-      const originalXScale = xScale.copy().domain([minTime, maxTime])
-      const [minOffset, maxOffset] = selection.map(originalXScale.invert).map(Math.floor)
-      const focusedData = data.map(d => ({ ...d, thread_slices: d.thread_slices.filter(x => x.start_execution_offset >= minOffset && x.end_execution_offset <= maxOffset) }))
+    const [minOffset, maxOffset] = (!selection) ? xScaleRef.domain() : selection.map(xScaleRef.invert).map(Math.floor)
 
-      xScale.domain([minOffset, maxOffset])
-      slices
-        .data(focusedData)
-        .attr("d", slicePath)
-    }
-  }
+    xScale.domain([minOffset, maxOffset])
 
-  function brushended({ selection }) {
-    if (!selection) {
-      xScale.domain([minTime, maxTime])
-      slices
-        .data(data)
-        .attr("d", slicePath)
-    }
+    const xAxis = d3.axisBottom()
+      .scale(xScale)
+
+    chart.selectAll(".x-axis")
+      .call(xAxis)
+
+    const focusedData = data.map(d => ({ ...d, thread_slices: d.thread_slices.filter(x => x.start_execution_offset >= minOffset && x.end_execution_offset <= maxOffset) }))
+
+    slices
+      .data(focusedData)
+      .attr("d", slicePath)
   }
 }
