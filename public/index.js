@@ -9,7 +9,7 @@ async function init() {
   }
   const width = 1000
   const height = data.length * 30
-  const focusHeight = 50
+  const focusHeight = 100
 
   const dimensions = { margin, height, width, focusHeight }
 
@@ -115,20 +115,19 @@ function dotPlot(data, dimensions) {
     return context
   }
 
-  const slicesGroup = chart.append("g")
-    .attr("class", "dots")
-
-  const slices = slicesGroup.selectAll("g")
-    .data(data)
-    .enter().append('g')
+  const slices = (g, yScale) => g.selectAll('path')
+    .data(data).enter()
+    .append('path')
+    .attr('class', 'slice')
     .attr("transform", d => `translate(0, ${(yScale(nameAccessor(d)) + (yScale.bandwidth() / 2))})`)
-    .append("path")
-    .attr("class", "slice")
     .attr("d", slicePath)
+  const sliceGroup = chart.append("g").call(slices, yScale)
+
 
   // Brush
   const brushPanel = d3.select("body")
     .append("svg")
+    .attr('class', 'focus')
     .attr('height', focusHeight)
     .attr('width', width)
 
@@ -145,6 +144,7 @@ function dotPlot(data, dimensions) {
   brushPanel.append("g")
     .attr('class', 'brush')
     .call(brush)
+    .call(slices, yScale.copy().range([focusHeight - margin.bottom, margin.top]))
 
   function brushed({ selection }) {
     const [minOffset, maxOffset] = (!selection) ? xScaleRef.domain() : selection.map(xScaleRef.invert).map(Math.floor)
@@ -159,8 +159,8 @@ function dotPlot(data, dimensions) {
 
     const focusedData = data.map(d => ({ ...d, thread_slices: d.thread_slices.filter(x => x.start_execution_offset >= minOffset && x.end_execution_offset <= maxOffset) }))
 
-    slices
+    sliceGroup.selectAll('.slice')
       .data(focusedData)
-      .attr("d", slicePath)
+      .attr('d', slicePath)
   }
 }
