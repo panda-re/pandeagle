@@ -11,3 +11,7 @@
     stroke: #4A89DC;
     stroke-width: 10px;
 }
+
+.focus .slice {
+    stroke-width: 5px;
+}
