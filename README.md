@@ -8,4 +8,4 @@ PANDeagle -- visualizing and exploring PANDA results
 # List of Features
 
 - [x] Zooming and Panning
-- [] Searching and Filtering 
+- [ ] Searching and Filtering 
