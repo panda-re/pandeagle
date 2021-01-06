@@ -5,7 +5,7 @@ PANDeagle -- visualizing and exploring PANDA results
 
 ![Names of UI Elements](img/ui.png)
 
-# List of Features
+# Features in Progress
 
 - [x] Zooming and Panning
 - [ ] Searching and Filtering 
