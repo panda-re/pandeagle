@@ -18,11 +18,16 @@
 
 /* Sidebar */
 
+.wrapper {
+    display: flex;
+    width: 100%;
+    align-items: stretch;
+}
+
 .sidebar {
     min-width: 250px;
     max-width: 250px;
     min-height: 100vh;
-    position: fixed;
     margin-left: -250px;
     transition: .3s;
 }
@@ -31,22 +36,10 @@
     margin-left: 0;
 }
 
-@media (max-width: 768px) {
-    .sidebar {
-        margin-left: -250px;
-    }
-    .sidebar.active {
-        margin-left: 0;
-    }
-}
+/* Main */
 
 .main {
-    transition: .3s;
-    padding: 20px;
     margin-left: 0;
+    padding: 20px;
     background-color: #fafafa;
-}
-
-.main.active {
-    margin-left: 250px;
 }

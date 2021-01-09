@@ -24,24 +24,26 @@
     </form>
   </nav>
 
-  <nav class="sidebar">
-    <form class="search-box">
-      <input class="form-control" type="search" placeholder="Search threads" aria-label="Search">
-    </form>
-    <ul class="list-group list-group-flush">
-      <li class="list-group-item">Cras justo odio</li>
-      <li class="list-group-item">Dapibus ac facilisis in</li>
-      <li class="list-group-item">Morbi leo risus</li>
-      <li class="list-group-item">Porta ac consectetur ac</li>
-      <li class="list-group-item">Vestibulum at eros</li>
-    </ul>
-  </nav>
+  <div class="wrapper">
+    <nav class="sidebar">
+      <form>
+        <input class="search-box form-control" type="search" placeholder="Search threads" aria-label="Search">
+      </form>
+      <ul class="thread-list list-group list-group-flush">
+        <li class="list-group-item">Cras justo odio</li>
+        <li class="list-group-item">Dapibus ac facilisis in</li>
+        <li class="list-group-item">Morbi leo risus</li>
+        <li class="list-group-item">Porta ac consectetur ac</li>
+        <li class="list-group-item">Vestibulum at eros</li>
+      </ul>
+    </nav>
 
-  <main class="main"></main>
+    <main class="main"></main>
+  </div>
 
   <script src="https://d3js.org/d3.v6.min.js"></script>
-  <script src="./sidebar.js"></script>
   <script src="./index.js"></script>
+  <script src="./sidebar.js"></script>
 </body>
 
 </html>
