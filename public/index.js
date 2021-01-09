@@ -14,6 +14,7 @@ async function init() {
   const dimensions = { margin, height, width, focusHeight }
 
   dotPlot(data, dimensions)
+  loadThreadList()
 }
 
 document.addEventListener('DOMContentLoaded', init)
