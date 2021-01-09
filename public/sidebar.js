@@ -3,9 +3,7 @@ async function loadThreadList() {
     const threads = [...new Set(data.map(d => d.names[0]))].map(d => ({ name: d, visible: true }))
 
     const searchBox = document.querySelector('.search-box')
-    searchBox.addEventListener('change', (event) => {
-        updateThreadList(threads.filter(({ name }) => name.toLowerCase().includes(event.target.value.toLowerCase())))
-    })
+    searchBox.addEventListener('change', event => threads.filter(({ name }) => name.toLowerCase().includes(event.target.value.toLowerCase())))
 
     updateThreadList(threads)
 
@@ -37,10 +35,8 @@ function updateThreadList(threads) {
     })
 
     const lis = threadList.querySelectorAll('li')
-    const checkboxes = threadList.querySelectorAll('input[type="checkbox"]')
     let lastChecked
-    lis.forEach(li => li.addEventListener('click', (event) => {
-        console.log(threads)
+    lis.forEach(li => li.addEventListener('click', event => {
         const currentCheckbox = li.querySelector('input[type="checkbox"]')
         if (event.target !== currentCheckbox) {
             currentCheckbox.checked = li.__data__.visible = !currentCheckbox.checked
