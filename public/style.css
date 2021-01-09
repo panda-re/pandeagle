@@ -15,3 +15,38 @@
 .focus .slice {
     stroke-width: 5px;
 }
+
+/* Sidebar */
+
+.sidebar {
+    min-width: 250px;
+    max-width: 250px;
+    min-height: 100vh;
+    position: fixed;
+    margin-left: -250px;
+    transition: .3s;
+}
+
+.sidebar.active {
+    margin-left: 0;
+}
+
+@media (max-width: 768px) {
+    .sidebar {
+        margin-left: -250px;
+    }
+    .sidebar.active {
+        margin-left: 0;
+    }
+}
+
+.main {
+    transition: .3s;
+    padding: 20px;
+    margin-left: 0;
+    background-color: #fafafa;
+}
+
+.main.active {
+    margin-left: 250px;
+}
