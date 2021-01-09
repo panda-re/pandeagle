@@ -36,6 +36,10 @@
     transition: .3s;
 }
 
+.sidebar li {
+    cursor: pointer;
+}
+
 .sidebar.active {
     margin-left: 0;
 }
