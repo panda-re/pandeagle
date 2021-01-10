@@ -2,7 +2,7 @@
 
 const e = React.createElement;
 
-class UIview extends Component {
+class ThreadCharts extends Component {
 
     constructor(props) {
         super(props);
@@ -203,6 +203,6 @@ class UIview extends Component {
     }
 }
 
-const domContainer = document.querySelector('#UIDiagram');
-ReactDOM.render(e(UIview), domContainer);
+const domContainer = document.querySelector('#UIContainer');
+ReactDOM.render(e(ThreadCharts), domContainer);
 
