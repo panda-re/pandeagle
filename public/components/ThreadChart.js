@@ -24,7 +24,6 @@ class ThreadChart extends React.Component {
     const dimensions = { margin, height, width, focusHeight }
 
     this.draw(data, dimensions)
-    loadThreadList()
   }
 
 
@@ -180,6 +179,4 @@ class ThreadChart extends React.Component {
   }
 }
 
-const e = React.createElement;
-const domContainer = document.querySelector('.main');
-ReactDOM.render(e(ThreadChart), domContainer);
+ReactDOM.render(<ThreadChart />, document.querySelector('.main'));
