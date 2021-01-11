@@ -14,6 +14,7 @@ async function init() {
   const dimensions = { margin, height, width, focusHeight }
 
   dotPlot(data, dimensions)
+  loadThreadList()
 }
 
 document.addEventListener('DOMContentLoaded', init)
@@ -52,7 +53,7 @@ function dotPlot(data, dimensions) {
   const endAccessor = data => data["thread_slices"].map(d => d.end_execution_offset)
 
   // create new graph
-  const chart = d3.select("body")
+  const chart = d3.select("main")
     .append("svg")
     .attr('height', height)
     .attr('width', width)
@@ -125,7 +126,7 @@ function dotPlot(data, dimensions) {
 
 
   // Brush
-  const brushPanel = d3.select("body")
+  const brushPanel = d3.select("main")
     .append("svg")
     .attr('class', 'focus')
     .attr('height', focusHeight)
