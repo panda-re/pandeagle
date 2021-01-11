@@ -1,8 +1,9 @@
 class Sidebar extends React.Component {
+  static contextType = ThreadListContext
+
   constructor(props) {
     super(props)
     this.state = {
-      threads: [],
       keyword: '',
       lastCheckedIndex: -1,
       lastCheckedState: true
@@ -13,11 +14,6 @@ class Sidebar extends React.Component {
   }
 
   componentDidMount() {
-    d3.json('http://localhost:3000/executions/1/threadslices').then(data => {
-      const threads = [...new Set(data.map(d => d.names[0]))].map(d => ({ name: d, visible: true }))
-      this.setState({ threads })
-    })
-
     const sidebarToggleButton = document.querySelector('#sidebar-collapse')
     const sidebar = document.querySelector('.sidebar')
     sidebarToggleButton.addEventListener('click', () => {
@@ -30,7 +26,7 @@ class Sidebar extends React.Component {
   }
 
   handleCheck(event, index) {
-    const threads = this.state.threads.slice()
+    const threads = this.context.threads.slice()
     let state = threads[index].visible = !threads[index].visible
 
     // Hold shift to check/uncheck multiple checkboxes
@@ -47,31 +43,28 @@ class Sidebar extends React.Component {
     }
 
     this.setState({
-      threads,
       lastCheckedIndex: index,
       lastCheckedState: state
     })
+
+    this.context.updateThreads(threads)
   }
 
   render() {
     return (
-      <div>
+      <nav className="sidebar">
         <form>
           <input className="search-box form-control" type="search" placeholder="Search..." onChange={this.handleSearch} value={this.state.keyword} />
         </form>
         <ul className="thread-list list-group list-group-flush">
-          {this.state.threads.filter(thread => thread.name.includes(this.state.keyword)).map((thread, index) =>
-            <li key={index} className="list-group-item list-group-item-action">
-              <label className="d-flex w-100 justify-content-between">
-                <span>{thread.name}</span>
-                <input type="checkbox" checked={thread.visible} onChange={(event) => { console.log(event); this.handleCheck(event, index) }}></input>
-              </label>
+          {this.context.threads.filter(thread => thread.newName.includes(this.state.keyword)).map((thread, index) =>
+            <li key={index} className="list-group-item list-group-item-action d-flex w-100 justify-content-between" onClick={(event) => this.handleCheck(event, index)}>
+              <span>{thread.newName}</span>
+              <input type="checkbox" checked={thread.visible} onChange={event => event.preventDefault()}></input>
             </li>
           )}
         </ul>
-      </div>
+      </nav>
     )
   }
 }
-
-ReactDOM.render(<Sidebar />, document.querySelector('.sidebar'))

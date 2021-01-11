@@ -1,33 +1,33 @@
-'use strict'
+const ThreadListContext = React.createContext({
+  threads: [],
+  updateThreads: () => []
+})
 
 class ThreadChart extends React.Component {
+  static contextType = ThreadListContext
 
   constructor(props) {
-    super(props);
-
-    this.state = { liked: false };
+    super(props)
+    this.draw = this.draw.bind(this)
   }
 
   async componentDidMount() {
     const data = await d3.json('http://localhost:3000/executions/1/threadslices')
-
-    const margin = {
-      top: 10,
-      right: 20,
-      bottom: 30,
-      left: 120
+    let threadNames = this.renameDuplicates(data.map(data => data["names"].join(" ")))
+    for (let i = 0; i < data.length; i++) {
+      data[i].newName = threadNames[i]
+      data[i].visible = true
     }
-    const width = 1000
-    const height = data.length * 30
-    const focusHeight = 100
+    this.context.updateThreads(data)
 
-    const dimensions = { margin, height, width, focusHeight }
-
-    this.draw(data, dimensions)
+    this.draw()
   }
 
+  componentDidUpdate() {
+    this.draw()
+  }
 
-  _renameDuplicates(threadNames) {
+  renameDuplicates(threadNames) {
     const nameCounts = new Map()
     const newNames = []
 
@@ -46,29 +46,33 @@ class ThreadChart extends React.Component {
     return newNames
   }
 
-  draw(data, dimensions) {
-    const { width, height, margin, focusHeight } = dimensions
+  draw() {
+    d3.selectAll('svg').remove()
 
-    let threadNames = data.map(data => data["names"].join(" "))
-    threadNames = this._renameDuplicates(threadNames)
-
-    for (let i = 0; i < data.length; i++) {
-      data[i].newName = threadNames[i]
+    const data = this.context.threads.filter(d => d.visible)
+    const margin = {
+      top: 10,
+      right: 20,
+      bottom: 30,
+      left: 120
     }
+    const width = 1000
+    const height = this.context.threads.length * 30
+    const focusHeight = 100
 
     const nameAccessor = data => data["newName"]
     const startAccessor = data => data["thread_slices"].map(d => d.start_execution_offset)
     const endAccessor = data => data["thread_slices"].map(d => d.end_execution_offset)
 
     // create new graph
-    const chart = d3.select("main")
-      .append("svg")
+    const chart = d3.select(this.node)
+      .append('svg')
       .attr('height', height)
       .attr('width', width)
 
     // y-axis
     const yScale = d3.scaleBand()
-      .domain(threadNames)
+      .domain(data.map(d => d.newName))
       .range([height - margin.bottom, margin.top])
 
     const yAxis = d3.axisLeft()
@@ -76,6 +80,7 @@ class ThreadChart extends React.Component {
       .tickSize(0)
 
     chart.append('g')
+      .attr('class', 'y-axis')
       .attr('transform', `translate(${margin.left},0)`)
       .call(yAxis)
       .call(g => g.select('.domain').remove())
@@ -93,17 +98,24 @@ class ThreadChart extends React.Component {
     const xAxis = d3.axisBottom()
       .scale(xScale)
 
-    chart.append("g")
+    chart.selectAll('g.x-axis')
+      .data([0])
+      .enter()
+      .append('g')
       .call(xAxis)
       .attr('class', 'x-axis')
-      .attr("transform", `translate(0,${dimensions.height - dimensions.margin.bottom})`)
+      .attr("transform", `translate(0,${height - margin.bottom})`)
 
     // gray axis line
     const lineGenerator = d3.line()
     const axisLine = d => lineGenerator([[margin.left, yScale(d) + yScale.bandwidth() / 2], [width - margin.right, yScale(d) + yScale.bandwidth() / 2]])
 
-    chart.append("g")
-      .selectAll("path")
+    chart.selectAll('g.grid-line')
+      .data([0])
+      .enter()
+      .append('g')
+      .attr('class', 'grid-line')
+      .selectAll("path.grid-line")
       .data(yScale.domain())
       .join('path')
       .attr("class", "grid-line")
@@ -124,18 +136,21 @@ class ThreadChart extends React.Component {
       return context
     }
 
-    const slices = (g, yScale) => g.selectAll('path')
-      .data(data).enter()
+    const slices = (g, yScale) => g.selectAll('path.slice')
+      .data(data)
+      .enter()
       .append('path')
       .attr('class', 'slice')
       .attr("transform", d => `translate(0, ${(yScale(nameAccessor(d)) + (yScale.bandwidth() / 2))})`)
       .attr("d", slicePath)
-    const sliceGroup = chart.append("g").call(slices, yScale)
+    const sliceGroup = chart.append("g")
+      .attr('class', 'slice-group')
+      .call(slices, yScale)
 
 
     // Brush
-    const brushPanel = d3.select("main")
-      .append("svg")
+    const brushPanel = d3.select(this.node)
+      .append('svg')
       .attr('class', 'focus')
       .attr('height', focusHeight)
       .attr('width', width)
@@ -145,13 +160,19 @@ class ThreadChart extends React.Component {
       .on("brush", brushed)
       .on("end", brushed)
 
-    brushPanel.append("g")
+    brushPanel.selectAll('g.brush-x-axis')
+      .data([0])
+      .enter()
+      .append("g")
       .call(xAxis)
-      .attr('class', 'x-axis')
+      .attr('class', 'brush-x-axis')
       .attr("transform", `translate(0, ${focusHeight - margin.bottom})`)
 
-    brushPanel.append("g")
-      .attr('class', 'brush')
+    brushPanel.selectAll('g.brush-y-axis')
+      .data([0])
+      .enter()
+      .append("g")
+      .attr('class', 'brush-y-axis')
       .call(brush)
       .call(slices, yScale.copy().range([focusHeight - margin.bottom, margin.top]))
 
@@ -175,8 +196,9 @@ class ThreadChart extends React.Component {
   }
 
   render() {
-    return null
+    return (
+      <main className="main" ref={node => this.node = node}>
+      </main>
+    )
   }
 }
-
-ReactDOM.render(<ThreadChart />, document.querySelector('.main'));
