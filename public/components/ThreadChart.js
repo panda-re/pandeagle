@@ -1,19 +1,16 @@
-'use strict';
+'use strict'
 
-const e = React.createElement;
-
-class ThreadCharts extends React.Component {
+class ThreadChart extends React.Component {
 
   constructor(props) {
     super(props);
-    // rest of the constructor
-    //this.state = { data:[] };
+
     this.state = { liked: false };
   }
 
   async componentDidMount() {
     const data = await d3.json('http://localhost:3000/executions/1/threadslices')
-    console.log(data)
+
     const margin = {
       top: 10,
       right: 20,
@@ -25,16 +22,36 @@ class ThreadCharts extends React.Component {
     const focusHeight = 100
 
     const dimensions = { margin, height, width, focusHeight }
-    //const data = this.props.data; // when we pass data through prop
-    this.drawChart(data, dimensions);
+
+    this.draw(data, dimensions)
+    loadThreadList()
   }
 
 
-  drawChart(data, dimensions) {
+  _renameDuplicates(threadNames) {
+    const nameCounts = new Map()
+    const newNames = []
+
+    threadNames.forEach(name => {
+      let count = nameCounts.get(name)
+      if (count == undefined) {
+        nameCounts.set(name, 1)
+        newNames.push(name)
+      } else {
+        count++
+        nameCounts.set(name, count)
+        newNames.push(name + count.toString())
+      }
+    })
+
+    return newNames
+  }
+
+  draw(data, dimensions) {
     const { width, height, margin, focusHeight } = dimensions
 
     let threadNames = data.map(data => data["names"].join(" "))
-    threadNames = renameDuplicates(threadNames)
+    threadNames = this._renameDuplicates(threadNames)
 
     for (let i = 0; i < data.length; i++) {
       data[i].newName = threadNames[i]
@@ -45,7 +62,7 @@ class ThreadCharts extends React.Component {
     const endAccessor = data => data["thread_slices"].map(d => d.end_execution_offset)
 
     // create new graph
-    const chart = d3.select("body")
+    const chart = d3.select("main")
       .append("svg")
       .attr('height', height)
       .attr('width', width)
@@ -118,7 +135,7 @@ class ThreadCharts extends React.Component {
 
 
     // Brush
-    const brushPanel = d3.select("body")
+    const brushPanel = d3.select("main")
       .append("svg")
       .attr('class', 'focus')
       .attr('height', focusHeight)
@@ -156,54 +173,13 @@ class ThreadCharts extends React.Component {
         .data(focusedData)
         .attr('d', slicePath)
     }
-
-    function renameDuplicates(threadNames) {
-      const nameCounts = new Map()
-      const newNames = []
-
-      threadNames.forEach(name => {
-        let count = nameCounts.get(name)
-        if (count == undefined) {
-          nameCounts.set(name, 1)
-          newNames.push(name)
-        } else {
-          count++
-          nameCounts.set(name, count)
-          newNames.push(name + count.toString())
-        }
-      })
-
-      return newNames
-    }
-
   }
 
-
-
-
-  //render() {
-  // return(
-  // <div>
-  //     TEST
-  // </div>
-  // )
-
-
-
-  //}
-
   render() {
-    if (this.state.liked) {
-      return 'You liked this.';
-    }
-
-    return (
-      <button onClick={() => this.setState({ liked: true })}>
-        Like
-      </button>
-    );
+    return null
   }
 }
 
-const domContainer = document.querySelector('#wrapper');
-ReactDOM.render(e(ThreadCharts), domContainer);
+const e = React.createElement;
+const domContainer = document.querySelector('.main');
+ReactDOM.render(e(ThreadChart), domContainer);
