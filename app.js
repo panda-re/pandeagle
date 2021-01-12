@@ -26,7 +26,13 @@ app.get('/executions', (req, res) => {
 });
 
 app.get('/executions/:executionId/threadslices/:pageIndex?/:pageSize?', (req, res) => {
-    conn.getThreadSlicesByExecutionIdWithPagination(req.params.executionId,req.params.pageIndex,req.params.pageSize,req.query.threadIds)
+    conn.getThreadSlicesByExecutionIdWithPagination(
+        req.params.executionId,
+        req.params.pageIndex,
+        req.params.pageSize,
+        req.query.threadIds,
+        req.query.start,
+        req.query.end)
         .then((exe) => {
             res.status(200);
             res.json(exe.rows);
@@ -46,7 +52,6 @@ app.get('/executions/:executionId/threads', (req, res) => {
         })
         .catch((err) => {
             console.log(err);
-            console.log("pool.idleCount: " + pool.idleCount);
             res.status(400);
             res.json(err);
         });
