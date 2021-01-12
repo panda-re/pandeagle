@@ -35,15 +35,17 @@ const conn = {
                 WHERE e.execution_id = $1
                 ORDER BY thread_id`, [executionId]);
     },
-    getThreadSlicesByExecutionIdWithPagination: async function (executionId, pageIndex, pageSize) {
+    getThreadSlicesByExecutionIdWithPagination: async function (executionId, pageIndex, pageSize, threadIds) {
+        threadIds = threadIds || null;
         return pool.query(
             `SELECT t.thread_id, t.names, json_agg(ts ORDER BY start_execution_offset) as thread_slices FROM ThreadSlice ts 
                     JOIN Threads t ON ts.thread_id = t.thread_id 
                     JOIN processes p ON t.process_id = p.process_id 
                     JOIN executions e ON p.execution_id = e.execution_id 
-                    WHERE e.execution_id = $1
+                    WHERE e.execution_id = $1 
+                    AND ($2::int[] IS NULL OR t.thread_id = ANY($2::int[]))
                     GROUP BY t.thread_id, t.names 
-                    ORDER BY thread_id ` + (!pageSize ? "" : `LIMIT $2 OFFSET $3`), (!pageSize ? [executionId] : [executionId, pageSize, pageSize * pageIndex]));
+                    ORDER BY thread_id ` + (!pageSize ? "" : `LIMIT $3 OFFSET $4`), (!pageSize ? [executionId, threadIds] : [executionId, threadIds, pageSize, pageSize * pageIndex]));
     }
 };
 
