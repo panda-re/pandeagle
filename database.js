@@ -43,9 +43,7 @@ const conn = {
                     JOIN executions e ON p.execution_id = e.execution_id 
                     WHERE e.execution_id = $1
                     GROUP BY t.thread_id, t.names 
-                    ORDER BY thread_id
-                    LIMIT $2
-                    OFFSET $3`, [executionId, pageSize, pageSize * pageIndex]);
+                    ORDER BY thread_id ` + (!pageSize ? "" : `LIMIT $2 OFFSET $3`), (!pageSize ? [executionId] : [executionId, pageSize, pageSize * pageIndex]));
     }
 };
 
