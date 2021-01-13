@@ -49,7 +49,9 @@ class ThreadChart extends React.Component {
   draw() {
     d3.selectAll('svg').remove()
 
-    const data = this.context.threads.filter(d => d.visible)
+    const data = this.context.threads
+    const filteredData = data.filter(d => d.visible)
+
     const margin = {
       top: 10,
       right: 20,
@@ -86,8 +88,8 @@ class ThreadChart extends React.Component {
       .call(g => g.select('.domain').remove())
 
     // x-axis
-    const maxTime = Math.max(...data.map(t => Math.max(...t.thread_slices.map(d => d.end_execution_offset))))
-    const minTime = Math.min(...data.map(t => Math.min(...t.thread_slices.map(d => d.start_execution_offset))))
+    const maxTime = Math.max(...filteredData.map(t => Math.max(...t.thread_slices.map(d => d.end_execution_offset))))
+    const minTime = Math.min(...filteredData.map(t => Math.min(...t.thread_slices.map(d => d.start_execution_offset))))
 
     const xScaleRef = d3.scaleLinear()
       .domain([minTime, maxTime])
@@ -136,17 +138,16 @@ class ThreadChart extends React.Component {
       return context
     }
 
-    const slices = (g, yScale) => g.selectAll('path.slice')
+    const slices = (g, data, y) => g.selectAll('path.slice')
       .data(data)
       .enter()
       .append('path')
       .attr('class', 'slice')
-      .attr("transform", d => `translate(0, ${(yScale(nameAccessor(d)) + (yScale.bandwidth() / 2))})`)
+      .attr("transform", d => `translate(0, ${(y(nameAccessor(d)) + (y.bandwidth() / 2))})`)
       .attr("d", slicePath)
     const sliceGroup = chart.append("g")
       .attr('class', 'slice-group')
-      .call(slices, yScale)
-
+      .call(slices, filteredData, yScale)
 
     // Brush
     const brushPanel = d3.select(this.node)
@@ -168,13 +169,16 @@ class ThreadChart extends React.Component {
       .attr('class', 'brush-x-axis')
       .attr("transform", `translate(0, ${focusHeight - margin.bottom})`)
 
-    brushPanel.selectAll('g.brush-y-axis')
+    const focusY = d3.scaleBand()
+      .domain(data.map(d => d.newName))
+      .range([margin.top, focusHeight - margin.bottom])
+    brushPanel.selectAll('g.brush-slices')
       .data([0])
       .enter()
       .append("g")
-      .attr('class', 'brush-y-axis')
+      .attr('class', 'brush-slices')
       .call(brush)
-      .call(slices, yScale.copy().range([margin.top, focusHeight - margin.bottom]))
+      .call(slices, data, focusY)
 
     function brushed({ selection }) {
       const [minOffset, maxOffset] = (!selection) ? xScaleRef.domain() : selection.map(xScaleRef.invert).map(Math.floor)
@@ -187,7 +191,7 @@ class ThreadChart extends React.Component {
       chart.selectAll(".x-axis")
         .call(xAxis)
 
-      const focusedData = data.map(d => ({ ...d, thread_slices: d.thread_slices.filter(x => x.start_execution_offset >= minOffset && x.end_execution_offset <= maxOffset) }))
+      const focusedData = filteredData.map(d => ({ ...d, thread_slices: d.thread_slices.filter(x => x.start_execution_offset >= minOffset && x.end_execution_offset <= maxOffset) }))
 
       sliceGroup.selectAll('.slice')
         .data(focusedData)
