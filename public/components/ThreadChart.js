@@ -73,7 +73,7 @@ class ThreadChart extends React.Component {
     // y-axis
     const yScale = d3.scaleBand()
       .domain(data.map(d => d.newName))
-      .range([height - margin.bottom, margin.top])
+      .range([margin.top, height - margin.bottom])
 
     const yAxis = d3.axisLeft()
       .scale(yScale)
@@ -174,7 +174,7 @@ class ThreadChart extends React.Component {
       .append("g")
       .attr('class', 'brush-y-axis')
       .call(brush)
-      .call(slices, yScale.copy().range([focusHeight - margin.bottom, margin.top]))
+      .call(slices, yScale.copy().range([margin.top, focusHeight - margin.bottom]))
 
     function brushed({ selection }) {
       const [minOffset, maxOffset] = (!selection) ? xScaleRef.domain() : selection.map(xScaleRef.invert).map(Math.floor)
