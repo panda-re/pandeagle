@@ -74,8 +74,8 @@ class ThreadChart extends React.Component {
 
     // y-axis
     const yScale = d3.scaleBand()
-      .domain(filteredData.map(d => d.newName))
-      .range([height - margin.bottom, margin.top])
+      .domain(data.map(d => d.newName))
+      .range([margin.top, height - margin.bottom])
 
     const yAxis = d3.axisLeft()
       .scale(yScale)
