@@ -13,9 +13,7 @@
 </head>
 
 <body>
-
-
-  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+  <header class="navbar navbar-expand-lg navbar-light bg-light">
     <a class="navbar-brand" href="#">
       <i class="bi bi-layout-sidebar" id="sidebar-collapse"></i>
       PANDEagle
@@ -24,40 +22,18 @@
       <select class="form-control mr-sm-2" onchange='selectProcess(this.value)' id='processSelect'>
       </select>
     </form>
-  </nav>
-  <div id="UIContainer"></div>
+  </header>
+
+  <div id="root"></div>
 
   <script src="https://d3js.org/d3.v6.min.js"></script>
-  <!-- Note: when deploying, replace "development.js" with "production.min.js". -->
-  <!-- <script src="https://unpkg.com/react@17/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js" crossorigin></script> -->
   <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
   <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
 
-  <script type="text/babel" src="UI_Diagram.js"></script>
-
-  <!-- <script src="./index.js"></script> -->
-  <div class="wrapper">
-    <nav class="sidebar">
-      <form>
-        <input class="search-box form-control" type="search" placeholder="Search..." aria-label="Search">
-      </form>
-      <ul class="thread-list list-group list-group-flush">
-        <li class="list-group-item">Cras justo odio</li>
-        <li class="list-group-item">Dapibus ac facilisis in</li>
-        <li class="list-group-item">Morbi leo risus</li>
-        <li class="list-group-item">Porta ac consectetur ac</li>
-        <li class="list-group-item">Vestibulum at eros</li>
-      </ul>
-    </nav>
-
-    <main class="main"></main>
-  </div>
-
-  <script src="https://d3js.org/d3.v6.min.js"></script>
-  <script src="./sidebar.js"></script>
-  <script src="./index.js"></script>
+  <script type="text/babel" src="components/ThreadChart.js"></script>
+  <script type="text/babel" src="components/Sidebar.js"></script>
+  <script type="text/babel" src="components/App.js"></script>
 </body>
 
 </html>
