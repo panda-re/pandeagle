@@ -5,7 +5,7 @@ class Sidebar extends React.Component {
     super(props)
     this.state = {
       keyword: '',
-      lastCheckedIndex: -1,
+      lastCheckedId: -1,
       lastCheckedState: true
     }
 
@@ -23,17 +23,22 @@ class Sidebar extends React.Component {
 
   handleSearch(event) {
     this.setState({ keyword: event.target.value })
+    this.setState({ lastCheckedId: -1 })
   }
 
-  handleCheck(event, index) {
+  handleCheck(event, id) {
     const threads = this.context.threads.slice()
-    let state = threads[index].visible = !threads[index].visible
+    const currentThread = threads.find(thread => thread.thread_id === id)
+    let state = currentThread.visible = !currentThread.visible
 
     // Hold shift to check/uncheck multiple checkboxes
-    if (event.nativeEvent.shiftKey) { // Workaround for event.shiftKey in React 17
+    if (event.nativeEvent.shiftKey // Workaround for event.shiftKey in React 17
+      && this.state.lastCheckedId !== -1
+      && this.state.lastCheckedId !== id) {
       let inBetween = false
-      threads.forEach((thread, i) => {
-        if (i === this.state.lastCheckedIndex || i === index) {
+      threads.forEach(thread => {
+        const currentId = thread.thread_id
+        if (currentId === this.state.lastCheckedId || currentId === id) {
           inBetween = !inBetween
         }
         if (inBetween) {
@@ -43,7 +48,7 @@ class Sidebar extends React.Component {
     }
 
     this.setState({
-      lastCheckedIndex: index,
+      lastCheckedId: id,
       lastCheckedState: state
     })
 
@@ -57,14 +62,14 @@ class Sidebar extends React.Component {
           <input className="search-box form-control" type="search" placeholder="Search..." onChange={this.handleSearch} value={this.state.keyword} />
         </form>
         <ul className="thread-list list-group list-group-flush">
-          {this.context.threads.filter(thread => thread.newName.includes(this.state.keyword)).map((thread, index) =>
-            <li key={index} className="list-group-item list-group-item-action d-flex w-100 justify-content-between" onClick={(event) => this.handleCheck(event, index)}>
+          {this.context.threads.filter(thread => thread.newName.includes(this.state.keyword)).map(thread =>
+            <li key={thread.thread_id} className="list-group-item list-group-item-action d-flex w-100 justify-content-between" onClick={(event) => this.handleCheck(event, thread.thread_id)}>
               <span>{thread.newName}</span>
               <input type="checkbox" checked={thread.visible} onChange={event => event.preventDefault()}></input>
             </li>
           )}
         </ul>
-      </nav>
+      </nav >
     )
   }
 }
