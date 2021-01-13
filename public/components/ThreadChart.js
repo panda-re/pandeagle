@@ -74,7 +74,7 @@ class ThreadChart extends React.Component {
 
     // y-axis
     const yScale = d3.scaleBand()
-      .domain(data.map(d => d.newName))
+      .domain(filteredData.map(d => d.newName))
       .range([margin.top, height - margin.bottom])
 
     const yAxis = d3.axisLeft()
@@ -88,8 +88,8 @@ class ThreadChart extends React.Component {
       .call(g => g.select('.domain').remove())
 
     // x-axis
-    const maxTime = Math.max(...filteredData.map(t => Math.max(...t.thread_slices.map(d => d.end_execution_offset))))
-    const minTime = Math.min(...filteredData.map(t => Math.min(...t.thread_slices.map(d => d.start_execution_offset))))
+    const maxTime = Math.max(...data.map(t => Math.max(...t.thread_slices.map(d => d.end_execution_offset))))
+    const minTime = Math.min(...data.map(t => Math.min(...t.thread_slices.map(d => d.start_execution_offset))))
 
     const xScaleRef = d3.scaleLinear()
       .domain([minTime, maxTime])
@@ -172,13 +172,14 @@ class ThreadChart extends React.Component {
     const focusY = d3.scaleBand()
       .domain(data.map(d => d.newName))
       .range([margin.top, focusHeight - margin.bottom])
-    brushPanel.selectAll('g.brush-slices')
-      .data([0])
-      .enter()
+    brushPanel
       .append("g")
       .attr('class', 'brush-slices')
-      .call(brush)
       .call(slices, data, focusY)
+
+    brushPanel.append('g')
+      .attr('class', 'brush')
+      .call(brush)
 
     function brushed({ selection }) {
       const [minOffset, maxOffset] = (!selection) ? xScaleRef.domain() : selection.map(xScaleRef.invert).map(Math.floor)
