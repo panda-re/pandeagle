@@ -11,15 +11,15 @@ class ThreadChart extends React.Component {
     this.draw = this.draw.bind(this)
   }
 
-  async componentDidMount() {
-    const data = await d3.json('http://localhost:3000/executions/1/threadslices')
-    let threadNames = this.renameDuplicates(data.map(data => data["names"].join(" ")))
-    for (let i = 0; i < data.length; i++) {
-      data[i].newName = threadNames[i]
-      data[i].visible = true
-    }
-    this.context.updateThreads(data)
-
+   componentDidMount() {
+    // const data = await d3.json('http://localhost:3000/executions/1/threadslices')
+    // let threadNames = this.renameDuplicates(data.map(data => data["names"].join(" ")))
+    // for (let i = 0; i < data.length; i++) {
+    //   data[i].newName = threadNames[i]
+    //   data[i].visible = true
+    // }
+    const data = this.props.data
+    // this.context.updateThreads(data)
     this.draw()
   }
 
