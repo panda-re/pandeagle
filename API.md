@@ -108,3 +108,54 @@ thread_slices | An array of all thread_slices that belong to the thread | array 
 threadslice_id | ID of thread slice | int
 start_execution_offset | The start instruction count of the thread slice | int
 end_execution_offset | The end instruction count of the thread slice | int 
+
+<hr />
+
+### Syscalls in one execution
+==**GET**== /executions/{executionId}/syscalls/{pageIndex}/{pageSize}?threadIds[]={threadId}&start={start}&end={end}
+
+NOTE: There can be multiple threadId.
+EXAMPLE: /executions/1/threadslices?threadIds[]=1&threadIds[]=2
+
+&nbsp; | executionId | pageIndex | pageSize
+------ | ----------- | --------- | --------
+type   | int         | int       | int
+description | ID of execution | Page number (0-based) | Number of threads on each page
+required?   | Yes | No | No
+
+###### Query Parameters
+
+&nbsp; | threadId | start | end
+------ | -------- | ----- | ---
+type   | int      | int   | int
+description | ID of thread | Minimum instruction count | Maximum instruction count
+required?   | No | No | No
+
+##### Response Schema
+JSON
+```json
+[
+    {
+        "thread_id": 0,
+        "names": [
+            "string"
+        ],
+        "syscalls": [
+            {
+                "syscall_id": 0,
+                "name": "stinrg",
+                "thread_id": 0,
+                "execution_offset": 0
+            }
+        ]
+    }
+]
+```
+Name | Description | type
+---- | ----------- | ----
+thread_id | ID of thread | int
+names     | An array of all the components in the thread name | array of string
+syscalls | An array of all syscalls that belong to the thread | array of objects
+syscall_id | ID of syscall | int
+name | name of syscall | string
+execution_offset | The instruction count when the syscall happens | int 

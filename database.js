@@ -59,7 +59,21 @@ const conn = {
                     AND ($2::int[] IS NULL OR t.thread_id = ANY($2::int[]))
                     GROUP BY t.thread_id, t.names 
                     ORDER BY thread_id ` + (!pageSize ? "" : `LIMIT $5 OFFSET $6`), (!pageSize ? [executionId, threadIds, start, end] : [executionId, threadIds, start, end, pageSize, pageSize * pageIndex]));
-    }
+    },
+    getSyscallsByExecutionIdWithPagination: async function (executionId, pageIndex, pageSize, threadIds, start, end) {
+        threadIds = threadIds || null;
+        return pool.query(
+            `SELECT t.thread_id, t.names, json_agg(sc ORDER BY execution_offset) as syscalls FROM syscalls sc 
+                JOIN Threads t ON sc.thread_id = t.thread_id 
+                JOIN processes p ON t.process_id = p.process_id 
+                JOIN executions e ON p.execution_id = e.execution_id 
+                WHERE e.execution_id = $1 
+                AND (($3::int IS NULL OR sc.execution_offset >= $3)
+                    AND ($4::int IS NULL OR sc.execution_offset <= $4))
+                AND ($2::int[] IS NULL OR t.thread_id = ANY($2::int[]))
+                GROUP BY t.thread_id, t.names 
+                ORDER BY thread_id ` + (!pageSize ? "" : `LIMIT $5 OFFSET $6`), (!pageSize ? [executionId, threadIds, start, end] : [executionId, threadIds, start, end, pageSize, pageSize * pageIndex]));
+    },
 };
 
 module.exports = conn;
