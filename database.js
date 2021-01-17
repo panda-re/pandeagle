@@ -3,7 +3,7 @@ const { Pool } = require('pg');
 const pool = new Pool({
     user: 'shenx',
     host: 'pandeagle.csse.rose-hulman.edu',
-    database: 'pandelephant',
+    database: 'pandelephant2',
     password: '123456',
     port: 5432,
     ssl: true
