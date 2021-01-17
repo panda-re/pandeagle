@@ -3,7 +3,7 @@ const { Pool } = require('pg');
 const pool = new Pool({
     user: 'shenx',
     host: 'pandeagle.csse.rose-hulman.edu',
-    database: 'pandelephant',
+    database: 'pandelephant2',
     password: '123456',
     port: 5432,
     ssl: true
@@ -58,7 +58,7 @@ const conn = {
                         AND ($4::int IS NULL OR ts.start_execution_offset <= $4))
                     AND ($2::int[] IS NULL OR t.thread_id = ANY($2::int[]))
                     GROUP BY t.thread_id, t.names 
-                    ORDER BY thread_id ` + (!pageSize ? "" : `LIMIT $3 OFFSET $4`), (!pageSize ? [executionId, threadIds, start, end] : [executionId, threadIds, start, end, pageSize, pageSize * pageIndex]));
+                    ORDER BY thread_id ` + (!pageSize ? "" : `LIMIT $5 OFFSET $6`), (!pageSize ? [executionId, threadIds, start, end] : [executionId, threadIds, start, end, pageSize, pageSize * pageIndex]));
     }
 };
 
