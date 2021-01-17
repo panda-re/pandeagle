@@ -6,24 +6,20 @@ class App extends React.Component {
 
     this.state = {
       threads: [],
+      isLoading: true,
       updateThreads: this.updateThreads
     }
-
   }
-  
-  async componentDidMount(){
+
+  async componentDidMount() {
     const data = await d3.json('http://localhost:3000/executions/1/threadslices')
     let threadNames = this.renameDuplicates(data.map(data => data["names"].join(" ")))
     for (let i = 0; i < data.length; i++) {
       data[i].newName = threadNames[i]
       data[i].visible = true
     }
-    console.log(data)
-    this.setState({threads: data})
+    this.setState({ threads: data, isLoading: false })
   }
-
-
-  
 
   renameDuplicates(threadNames) {
     const nameCounts = new Map()
@@ -46,10 +42,30 @@ class App extends React.Component {
 
   render() {
     return (
-      <ThreadListContext.Provider value={this.state}>
-        <Sidebar />
-        <ThreadChart data={this.state.threads}/>
-      </ThreadListContext.Provider >
+      // <ThreadListContext.Provider value={this.state}>
+      <React.Fragment>
+        <Header />
+        <div className="container">
+          {!this.state.isLoading &&
+            <Sidebar
+              data={this.state.threads}
+              updateThreads={this.updateThreads} />}
+          {!this.state.isLoading &&
+            <main className="main">
+              <ThreadChart
+                data={this.state.threads}
+                height={this.state.threads.length * 30 + 100}
+                width={1000}
+                margin={{
+                  top: 10,
+                  right: 20,
+                  bottom: 30,
+                  left: 120
+                }} />
+            </main>}
+        </div>
+      </React.Fragment>
+      // </ThreadListContext.Provider >
     )
   }
 }

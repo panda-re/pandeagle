@@ -1,28 +1,12 @@
-.tick text {
-    font-size: 1.4em;
-}
+/* container */
 
-.grid-line {
-    stroke: #272727;
-    opacity: 0.2;
-}
-
-.slice {
-    stroke: #4A89DC;
-    stroke-width: 10px;
-}
-
-.focus .slice {
-    stroke-width: 5px;
-}
-
-/* Wrapper */
-
-#root {
+.container {
     display: flex;
+    align-items: stretch;
     width: 100%;
     height: 100vh;
-    align-items: stretch;
+    margin: 0;
+    padding: 0;
 }
 
 /* Sidebar */
