@@ -7,33 +7,25 @@
   <script src="js/bootstrap.min.js"></script>
   <script src="js/popper.min.js"></script>
   <script src="js/index.js"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.3.0/font/bootstrap-icons.css">
   <link rel="stylesheet" href="css/bootstrap.min.css">
   <link rel="stylesheet" href="./style.css">
 </head>
 
 <body>
-  <header class="navbar navbar-expand-lg navbar-light bg-light">
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
     <a class="navbar-brand" href="#">
-      <i class="bi bi-layout-sidebar" id="sidebar-collapse"></i>
       PANDEagle
     </a>
     <form class="form-inline my-2 my-lg-0">
       <select class="form-control mr-sm-2" onchange='selectProcess(this.value)' id='processSelect'>
+
       </select>
     </form>
-  </header>
-
-  <div id="root"></div>
+  </nav>
 
   <script src="https://d3js.org/d3.v6.min.js"></script>
-  <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
-  <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
 
-  <script type="text/babel" src="components/ThreadChart.js"></script>
-  <script type="text/babel" src="components/Sidebar.js"></script>
-  <script type="text/babel" src="components/App.js"></script>
+  <script src="./index.js"></script>
 </body>
 
 </html>
