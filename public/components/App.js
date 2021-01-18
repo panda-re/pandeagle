@@ -6,6 +6,7 @@ class App extends React.Component {
 
     this.state = {
       threads: [],
+      syscalls:[],
       isLoading: true,
       updateThreads: this.updateThreads
     }
@@ -13,12 +14,20 @@ class App extends React.Component {
 
   async componentDidMount() {
     const data = await d3.json('http://localhost:3000/executions/1/threadslices')
+    const syscall = await d3.json('http://localhost:3000/executions/1/syscalls/')
     let threadNames = this.renameDuplicates(data.map(data => data["names"].join(" ")))
+    let threadSyscallNames = this.renameDuplicates(syscall.map(data => data["names"].join(" ")))
     for (let i = 0; i < data.length; i++) {
       data[i].newName = threadNames[i]
       data[i].visible = true
     }
-    this.setState({ threads: data, isLoading: false })
+    for (let i = 0; i < syscall.length; i++) {
+      syscall[i].newName = threadSyscallNames[i]
+      syscall[i].visible = true
+    }
+    // console.log(syscall)
+    // console.log(data)
+    this.setState({ threads: data, syscalls:syscall, isLoading: false })
   }
 
   renameDuplicates(threadNames) {
@@ -61,7 +70,9 @@ class App extends React.Component {
                   right: 20,
                   bottom: 30,
                   left: 120
-                }} />
+                }} 
+                syscall={this.state.syscalls}
+                />
             </main>}
         </div>
       </React.Fragment>
