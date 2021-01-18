@@ -44,6 +44,25 @@ app.get('/executions/:executionId/threadslices/:pageIndex?/:pageSize?', (req, re
         });
 });
 
+app.get('/executions/:executionId/syscalls/:pageIndex?/:pageSize?', (req, res) => {
+    conn.getSyscallsByExecutionIdWithPagination(
+        req.params.executionId,
+        req.params.pageIndex,
+        req.params.pageSize,
+        req.query.threadIds,
+        req.query.start,
+        req.query.end)
+        .then((exe) => {
+            res.status(200);
+            res.json(exe.rows);
+        })
+        .catch((err) => {
+            console.log(err);
+            res.status(400);
+            res.json(err);
+        });
+});
+
 app.get('/executions/:executionId/threads', (req, res) => {
     conn.getThreadsByExecutionId(req.params.executionId)
         .then((exe) => {
@@ -58,22 +77,6 @@ app.get('/executions/:executionId/threads', (req, res) => {
 });
 
 
-
-// app.get('/defaultExecution', (req, res) => {
-//     pool
-//         .query('SELECT * FROM Threads WHERE process_id IN (SELECT process_id FROM Processes WHERE execution_id = (SELECT execution_id FROM Executions LIMIT 1))')
-//         .then((thr) => {
-//             thr.rows.forEach(element => {
-//                 element.name = element.names.join(' ');
-//             });
-//             res.status(200);
-//             res.json(thr.rows);
-//         })
-//         .catch((err) => {
-//             res.status(400);
-//             res.json(err);
-//         });
-// });
 
 app.listen(port, () => {
     console.log(`Example app listening at http://localhost:${port}`);
