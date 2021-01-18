@@ -1,209 +1,237 @@
-const ThreadListContext = React.createContext({
-  threads: [],
-  updateThreads: () => []
-})
+// const ThreadListContext = React.createContext({
+//   threads: [],
+//   isLoading: true,
+//   updateThreads: () => []
+// })
 
 class ThreadChart extends React.Component {
-  static contextType = ThreadListContext
-
   constructor(props) {
     super(props)
-    this.draw = this.draw.bind(this)
   }
 
-   componentDidMount() {
-    // const data = await d3.json('http://localhost:3000/executions/1/threadslices')
-    // let threadNames = this.renameDuplicates(data.map(data => data["names"].join(" ")))
-    // for (let i = 0; i < data.length; i++) {
-    //   data[i].newName = threadNames[i]
-    //   data[i].visible = true
-    // }
-    const data = this.props.data
-    // this.context.updateThreads(data)
-    this.draw()
+  componentDidMount() {
+    const { data, width, height, margin } = this.props
+    const focusHeight = 100
+    const maxTime = Math.max(...data.map(t => Math.max(...t.thread_slices.map(d => d.end_execution_offset))))
+    const minTime = Math.min(...data.map(t => Math.min(...t.thread_slices.map(d => d.start_execution_offset))))
+    const contextView = d3.select(this.contextView)
+    const focusView = d3.select(this.focusView)
+
+    this.xScale = d3.scaleLinear()
+      .domain([minTime, maxTime])
+      .range([margin.left, width - margin.right])
+    this.contextYScale = d3.scaleBand()
+      .domain(data.map(d => d.newName))
+      .range([margin.top, height - focusHeight - margin.bottom])
+    this.focusYScale = this.contextYScale.copy().range([margin.top, focusHeight - margin.bottom])
+
+    this.contextXAxis = contextView.append('g')
+      .attr('class', 'thread-chart__context-view__x-axis')
+      .attr('transform', `translate(0,${height - focusHeight - margin.bottom})`)
+    this.contextYAxis = contextView.append('g')
+      .attr('class', 'thread-chart__context-view__y-axis')
+      .attr('transform', `translate(${margin.left},0)`)
+    this.contextGridLineGroup = contextView.append('g')
+      .attr('class', 'thread-chart__context-view__grid-line-group')
+    this.contextSliceGroup = contextView.append('g')
+      .attr('class', 'thread-chart__context-view__slice-group')
+      .attr('clip-path', 'url(#clip)')
+    this.focusXAxis = focusView.append('g')
+      .attr('class', 'thread-chart__focus-view__x-axis')
+      .attr('transform', `translate(0, ${focusHeight - margin.bottom})`)
+    this.focusSliceGroup = focusView.append('g')
+      .attr('class', 'thread-chart__focus-view__slice-group')
+
+    this.create()
   }
 
   componentDidUpdate() {
-    this.draw()
+    // FIXME: assuming there is only one type of data change right now 
+    // # of visible threads changed
+    const newThreads = this.props.data.filter(d => d.visible).map(d => d.newName)
+
+    this.contextYScale = this.contextYScale.copy().domain(newThreads)
+    this.updateContextView(this.xScale, this.contextYScale)
+    this.updateFocusView(this.xScale, this.focusYScale)
   }
 
-  renameDuplicates(threadNames) {
-    const nameCounts = new Map()
-    const newNames = []
-
-    threadNames.forEach(name => {
-      let count = nameCounts.get(name)
-      if (count == undefined) {
-        nameCounts.set(name, 1)
-        newNames.push(name)
-      } else {
-        count++
-        nameCounts.set(name, count)
-        newNames.push(name + count.toString())
-      }
-    })
-
-    return newNames
+  get t() {
+    return d3.transition().duration(1000)
   }
 
-  draw() {
-    d3.selectAll('svg').remove()
+  drawGridLines(g, yScale) {
+    const { width, margin } = this.props
+    const gridLine = d3.line()([[margin.left, 0], [width - margin.right, 0]])
 
-    const data = this.context.threads
-    const filteredData = data.filter(d => d.visible)
+    g.selectAll('path')
+      .data(yScale.domain())
+      .join(
+        enter => enter.append('path')
+          .attr('class', 'thead-chart__context-view__grid-line-group__grid-line')
+          .attr('transform', d => `translate(0,${yScale(d) + yScale.bandwidth() / 2})`)
+          .attr('d', gridLine)
+          .style('stroke', '#272727')
+          .style('opacity', 0)
+          .call(enter => enter.transition(this.t)
+            .style('opacity', .2)
+          ),
+        update => update.call(update => update.transition(this.t)
+          .attr('transform', d => `translate(0,${yScale(d) + yScale.bandwidth() / 2})`)),
+        exit => exit.transition(this.t)
+          .style('opacity', 0)
+          .remove()
+      )
 
-    const margin = {
-      top: 10,
-      right: 20,
-      bottom: 30,
-      left: 120
+  }
+
+  sliceGenerator(d, xScale) {
+    const startAccessor = data => data['thread_slices'].map(d => d.start_execution_offset)
+    const endAccessor = data => data['thread_slices'].map(d => d.end_execution_offset)
+
+    const startPoints = startAccessor(d)
+    const endPoints = endAccessor(d)
+
+    const context = d3.path()
+
+    for (let i = 0; i < startPoints.length; i++) {
+      context.moveTo(xScale(startPoints[i]), 0)
+      context.lineTo(xScale(endPoints[i]), 0)
     }
-    const width = 1000
-    const height = this.context.threads.length * 30
+
+    return context
+  }
+
+  drawThreadSlices(g, xScale, yScale, strokeWidth = 10) {
+    g.selectAll('path')
+      .data(this.props.data.filter(d => d.visible), d => d.newName)
+      .join(
+        enter => enter.append('path')
+          .attr('class', 'thread-chart__slice-group__slice')
+          .attr('transform', d => `translate(0, ${yScale(d.newName) + yScale.bandwidth() / 2})`)
+          .attr('d', d => this.sliceGenerator(d, xScale))
+          .style('stroke-width', strokeWidth)
+          .style('stroke', '#4A89DC')
+          .style('opacity', 0)
+          .call(update => update.transition(this.t)
+            .style('opacity', 1)),
+        update => update
+          .attr('d', d => this.sliceGenerator(d, xScale))
+          .call(update => update.transition(this.t)
+            .attr('transform', d => `translate(0, ${yScale(d.newName) + yScale.bandwidth() / 2})`)),
+        exit => exit.transition(this.t)
+          .style('opacity', 0)
+          .remove()
+      )
+  }
+
+  create() {
+    this.createContextView()
+    this.createFocusView()
+  }
+
+  createContextView() {
+    const { width, height, margin } = this.props
     const focusHeight = 100
-
-    const nameAccessor = data => data["newName"]
-    const startAccessor = data => data["thread_slices"].map(d => d.start_execution_offset)
-    const endAccessor = data => data["thread_slices"].map(d => d.end_execution_offset)
-
-    // create new graph
-    const chart = d3.select(this.node)
-      .append('svg')
-      .attr('height', height)
-      .attr('width', width)
+    const contextView = d3.select(this.contextView)
 
     // y-axis
-    const yScale = d3.scaleBand()
-      .domain(filteredData.map(d => d.newName))
-      .range([margin.top, height - margin.bottom])
-
-    const yAxis = d3.axisLeft()
-      .scale(yScale)
+    const yScale = this.contextYScale
+    const yAxis = d3.axisLeft(yScale)
       .tickSize(0)
-
-    chart.append('g')
-      .attr('class', 'y-axis')
-      .attr('transform', `translate(${margin.left},0)`)
+    this.contextYAxis
       .call(yAxis)
       .call(g => g.select('.domain').remove())
+      .call(g => g.selectAll('text').style('font-size', '1.4em'))
 
     // x-axis
-    const maxTime = Math.max(...data.map(t => Math.max(...t.thread_slices.map(d => d.end_execution_offset))))
-    const minTime = Math.min(...data.map(t => Math.min(...t.thread_slices.map(d => d.start_execution_offset))))
+    const xScale = this.xScale
+    const xAxis = d3.axisBottom(xScale)
+    this.contextXAxis.call(xAxis)
 
-    const xScaleRef = d3.scaleLinear()
-      .domain([minTime, maxTime])
-      .range([margin.left, width - margin.right])
+    // grid line
+    this.drawGridLines(this.contextGridLineGroup, yScale)
 
-    const xScale = xScaleRef.copy()
+    // thread slices
+    this.drawThreadSlices(this.contextSliceGroup, xScale, yScale)
 
-    const xAxis = d3.axisBottom()
-      .scale(xScale)
+    // clipping path (prevents data overflow on x axis)
+    contextView.append('clipPath')
+      .attr('id', 'clip')
+      .append('rect')
+      .attr('x', margin.left)
+      .attr('y', margin.top)
+      .attr('height', height - focusHeight)
+      .attr('width', width - margin.left - margin.right)
+  }
 
-    chart.selectAll('g.x-axis')
-      .data([0])
-      .enter()
-      .append('g')
-      .call(xAxis)
-      .attr('class', 'x-axis')
-      .attr("transform", `translate(0,${height - margin.bottom})`)
+  createFocusView() {
+    const { width, margin } = this.props
+    const focusHeight = 100
 
-    // gray axis line
-    const lineGenerator = d3.line()
-    const axisLine = d => lineGenerator([[margin.left, yScale(d) + yScale.bandwidth() / 2], [width - margin.right, yScale(d) + yScale.bandwidth() / 2]])
+    // x-axis
+    const xScale = this.xScale
+    const xAxis = d3.axisBottom(xScale)
 
-    chart.selectAll('g.grid-line')
-      .data([0])
-      .enter()
-      .append('g')
-      .attr('class', 'grid-line')
-      .selectAll("path.grid-line")
-      .data(yScale.domain())
-      .join('path')
-      .attr("class", "grid-line")
-      .attr("d", axisLine)
+    this.focusXAxis.call(xAxis)
 
-    // slices
-    const slicePath = d => {
-      const startPoints = startAccessor(d)
-      const endPoints = endAccessor(d)
+    // y scale
+    const yScale = this.focusYScale
 
-      const context = d3.path()
-
-      for (let i = 0; i < startPoints.length; i++) {
-        context.moveTo(xScale(startPoints[i]), 0)
-        context.lineTo(xScale(endPoints[i]), 0)
-      }
-
-      return context
-    }
-
-    const slices = (g, data, y) => g.selectAll('path.slice')
-      .data(data)
-      .enter()
-      .append('path')
-      .attr('class', 'slice')
-      .attr("transform", d => `translate(0, ${(y(nameAccessor(d)) + (y.bandwidth() / 2))})`)
-      .attr("d", slicePath)
-    const sliceGroup = chart.append("g")
-      .attr('class', 'slice-group')
-      .call(slices, filteredData, yScale)
+    // slice 
+    const brushPanel = d3.select(this.focusView)
+    this.drawThreadSlices(this.focusSliceGroup, xScale, yScale, 5)
 
     // Brush
-    const brushPanel = d3.select(this.node)
-      .append('svg')
-      .attr('class', 'focus')
-      .attr('height', focusHeight)
-      .attr('width', width)
+    const brushed = ({ selection }) => {
+      const focus = (!selection) ? xScale.domain() : selection.map(xScale.invert).map(Math.floor)
+      const newContextXScale = this.xScale.copy().domain(focus)
+      this.updateContextView(newContextXScale, this.contextYScale)
+    }
 
     const brush = d3.brushX()
       .extent([[margin.left, 0], [width - margin.right, focusHeight - margin.bottom]])
-      .on("brush", brushed)
-      .on("end", brushed)
-
-    brushPanel.selectAll('g.brush-x-axis')
-      .data([0])
-      .enter()
-      .append("g")
-      .call(xAxis)
-      .attr('class', 'brush-x-axis')
-      .attr("transform", `translate(0, ${focusHeight - margin.bottom})`)
-
-    const focusY = d3.scaleBand()
-      .domain(data.map(d => d.newName))
-      .range([margin.top, focusHeight - margin.bottom])
-    brushPanel
-      .append("g")
-      .attr('class', 'brush-slices')
-      .call(slices, data, focusY)
+      .on('brush', brushed)
+      .on('end', brushed)
 
     brushPanel.append('g')
-      .attr('class', 'brush')
+      .attr('class', 'thread-chart__focus-view__brush')
       .call(brush)
+  }
 
-    function brushed({ selection }) {
-      const [minOffset, maxOffset] = (!selection) ? xScaleRef.domain() : selection.map(xScaleRef.invert).map(Math.floor)
+  updateContextView(newXScale, newYScale) {
+    // x- and y- axis
+    this.contextXAxis.transition(this.t).call(d3.axisBottom(newXScale))
+    this.contextYAxis.transition(this.t).call(d3.axisLeft(newYScale).tickSize(0))
+    this.contextYAxis.call(g => g.select('.domain').remove())
+      .call(g => g.selectAll('text').style('font-size', '1.4em'))
 
-      xScale.domain([minOffset, maxOffset])
+    // grid lines
+    this.drawGridLines(this.contextGridLineGroup, newYScale)
 
-      const xAxis = d3.axisBottom()
-        .scale(xScale)
+    // thread slices
+    this.drawThreadSlices(this.contextSliceGroup, newXScale, newYScale)
+  }
 
-      chart.selectAll(".x-axis")
-        .call(xAxis)
-
-      const focusedData = filteredData.map(d => ({ ...d, thread_slices: d.thread_slices.filter(x => x.start_execution_offset >= minOffset && x.end_execution_offset <= maxOffset) }))
-
-      sliceGroup.selectAll('.slice')
-        .data(focusedData)
-        .attr('d', slicePath)
-    }
+  updateFocusView(newXScale, newYScale) {
+    this.drawThreadSlices(this.focusSliceGroup, newXScale, newYScale, 5)
   }
 
   render() {
     return (
-      <main className="main" ref={node => this.node = node}>
-      </main>
+      <article className='thread-chart'>
+        <svg
+          className='thread-chart__context-view'
+          ref={el => this.contextView = el}
+          width={this.props.width}
+          height={this.props.height - 100}>
+        </svg>
+        <svg
+          className='thread-chart__focus-view'
+          ref={el => this.focusView = el}
+          width={this.props.width}
+          height='100'>
+        </svg>
+      </article>
     )
   }
 }
