@@ -4,8 +4,12 @@ class Header extends React.Component {
 
     this.state = {
       executions: [],
-      threads: []
+      threads: [],
+      isSyscallOn: true
+
+      
     }
+    this.handleSysClick = this.handleSysClick.bind(this);
   }
 
   componentDidMount() {
@@ -19,6 +23,14 @@ class Header extends React.Component {
 
   fetchThreads() {
     d3.json('/executions/1/threadslices').then(threads => this.setState({ threads }))
+  }
+
+  handleSysClick() {
+    this.props.getSyscalls()
+    this.setState(prevState => ({
+      isSyscallOn: !prevState.isSyscallOn
+    }));
+    this.props.updateShowSysCalls(this.state.isSyscallOn)
   }
 
   render() {
@@ -39,6 +51,12 @@ class Header extends React.Component {
               <option key={thread.thread_id} value={thread.thread_id}>{thread.names.join(' ')}</option>
             )}
           </select>
+          <a className="navbar-brand" href="#">
+            System Call
+          </a>
+          <button onClick={this.handleSysClick}>
+            {this.state.isSyscallOn ? 'ON' : 'OFF'}
+          </button>
         </form>
       </header>
     )
