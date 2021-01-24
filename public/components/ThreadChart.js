@@ -10,7 +10,8 @@ class ThreadChart extends React.Component {
   }
 
   componentDidMount() {
-    const { data, width, height, margin , syscall} = this.props
+    console.log("1")
+    const { data, width, height, margin} = this.props
     const focusHeight = 100
     const maxTime = Math.max(...data.map(t => Math.max(...t.thread_slices.map(d => d.end_execution_offset))))
     const minTime = Math.min(...data.map(t => Math.min(...t.thread_slices.map(d => d.start_execution_offset))))
@@ -52,7 +53,7 @@ class ThreadChart extends React.Component {
     // FIXME: assuming there is only one type of data change right now 
     // # of visible threads changed
     const newThreads = this.props.data.filter(d => d.visible).map(d => d.newName)
-
+    console.log(this.props.data)
     this.contextYScale = this.contextYScale.copy().domain(newThreads)
     this.updateContextView(this.xScale, this.contextYScale)
     this.updateFocusView(this.xScale, this.focusYScale)
@@ -129,26 +130,28 @@ class ThreadChart extends React.Component {
 
   syscallArrowGenerator(d,xScale){
     //console.log(d)
-    const xOffsets =  syscall => syscall['syscalls'].map(d => d.execution_offset)
-    const arrowPoint = xOffsets(d)
-    //console.log(arrowPoint)
-    //const line = d3.line().context(context);
-    const context = d3.path()
-
-    for (let i = 0; i < arrowPoint.length; i++) {
-      context.moveTo(xScale(arrowPoint[i]), 0)
-      context.lineTo(xScale(arrowPoint[i]), 4)
+    if(d.hasOwnProperty('syscalls')){
+      const xOffsets =  data => data['syscalls'].map(d => d.execution_offset)
+      //console.log(xOffsets)
+      const arrowPoint = xOffsets(d)
+      //console.log(arrowPoint)
+      //const line = d3.line().context(context);
+      const context = d3.path()
+  
+      for (let i = 0; i < arrowPoint.length; i++) {
+        context.moveTo(xScale(arrowPoint[i]), 0)
+        context.lineTo(xScale(arrowPoint[i]), 4)
+      }
+  
+      //console.log(context)
+  
+      return context
     }
-
-    console.log(context)
-
-    return context
-    
   }
 
   drawSystemCalls(g, xScale, yScale){
     g.selectAll('path')
-    .data(this.props.syscall.filter(d => d.visible), d => d.newName)
+    .data(this.props.data.filter(d => d.visible), d => d.newName)
     .join(
       enter => enter.append('path')
         .attr('class', 'thread-chart__context-view__system-call-group__arrow')
@@ -261,6 +264,8 @@ class ThreadChart extends React.Component {
 
     // thread slices
     this.drawThreadSlices(this.contextSliceGroup, newXScale, newYScale)
+    //sys calls
+    this.drawSystemCalls(this.systemCallGroup, newXScale, newYScale)
   }
 
   updateFocusView(newXScale, newYScale) {

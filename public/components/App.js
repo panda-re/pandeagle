@@ -6,33 +6,34 @@ class App extends React.Component {
 
     this.state = {
       threads: [],
-      syscalls:[],
+      syscall:[],
       isLoading: true,
-      updateThreads: this.updateThreads
+      updateThreads: this.updateThreads,
+      getSyscalls: this.getSyscalls.bind(this)
     }
   }
 
   async componentDidMount() {
     const data = await d3.json('http://localhost:3000/executions/1/threadslices')
-    const syscall = await d3.json('http://localhost:3000/executions/1/syscalls/')
+    //const syscall = await d3.json('http://localhost:3000/executions/1/syscalls/')
     let threadNames = this.renameDuplicates(data.map(data => data["names"].join(" ")))
-    let threadSyscallNames = this.renameDuplicates(syscall.map(data => data["names"].join(" ")))
+
     for (let i = 0; i < data.length; i++) {
       data[i].newName = threadNames[i]
       data[i].visible = true
+      //data[i].syscalls = []
     }
-    for (let i = 0; i < syscall.length; i++) {
-      syscall[i].newName = threadSyscallNames[i]
-      syscall[i].visible = true
-    }
-    // console.log(syscall)
-    // console.log(data)
-    this.setState({ threads: data, syscalls:syscall, isLoading: false })
+
+    //const result = syscall.map(x => Object.assign(x, data.find(y => y.thread_id == x.thread_id)))
+     //console.log(result)
+     //console.log(data)
+    this.setState({ threads: data,isLoading: false })
   }
 
   renameDuplicates(threadNames) {
     const nameCounts = new Map()
     const newNames = []
+    //console.log(this.state.isLoading)
 
     threadNames.forEach(name => {
       let count = nameCounts.get(name)
@@ -49,11 +50,22 @@ class App extends React.Component {
     return newNames
   }
 
+  async getSyscalls(){
+    const syscall = await d3.json('http://localhost:3000/executions/1/syscalls/')
+    this.setState({threads :  syscall.map(x => Object.assign(x, this.state.threads.find(y => y.thread_id == x.thread_id)))})
+    // this.setState( 
+    //   (state,props) => 
+    //   { return {threads :  syscall.map(x => Object.assign(x, state.threads.find(y => y.thread_id == x.thread_id)))}
+    //   })
+  }
+
   render() {
     return (
       // <ThreadListContext.Provider value={this.state}>
       <React.Fragment>
-        <Header />
+        <Header 
+          getSyscalls = {this.state.getSyscalls}
+        />
         <div className="container">
           {!this.state.isLoading &&
             <Sidebar
@@ -71,7 +83,7 @@ class App extends React.Component {
                   bottom: 30,
                   left: 120
                 }} 
-                syscall={this.state.syscalls}
+              
                 />
             </main>}
         </div>
