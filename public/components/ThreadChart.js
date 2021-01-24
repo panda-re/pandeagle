@@ -10,7 +10,8 @@ class ThreadChart extends React.Component {
   }
 
   componentDidMount() {
-    const { data, width, height, margin } = this.props
+    console.log("1")
+    const { data, width, height, margin} = this.props
     const focusHeight = 100
     const maxTime = Math.max(...data.map(t => Math.max(...t.thread_slices.map(d => d.end_execution_offset))))
     const minTime = Math.min(...data.map(t => Math.min(...t.thread_slices.map(d => d.start_execution_offset))))
@@ -35,6 +36,9 @@ class ThreadChart extends React.Component {
       .attr('class', 'thread-chart__context-view__grid-line-group')
     this.contextSliceGroup = contextView.append('g')
       .attr('class', 'thread-chart__context-view__slice-group')
+      .attr('clip-path', 'url(#clip)')
+    this.systemCallGroup = contextView.append('g')
+      .attr('class', 'thread-chart__context-view__system-call-group')
       .attr('clip-path', 'url(#clip)')
     this.focusXAxis = focusView.append('g')
       .attr('class', 'thread-chart__focus-view__x-axis')
@@ -123,6 +127,53 @@ class ThreadChart extends React.Component {
       )
   }
 
+  syscallArrowGenerator(d,xScale){
+    //console.log(d)
+    if(d.hasOwnProperty('syscalls') && this.props.showSysCalls){
+      const xOffsets =  data => data['syscalls'].map(d => d.execution_offset)
+      //console.log(xOffsets)
+      const arrowPoint = xOffsets(d)
+      //console.log(arrowPoint)
+      //const line = d3.line().context(context);
+      const context = d3.path()
+  
+      for (let i = 0; i < arrowPoint.length; i++) {
+        context.moveTo(xScale(arrowPoint[i]), 0)
+        context.lineTo(xScale(arrowPoint[i]), 4)
+      }
+  
+      //console.log(context)
+  
+      return context
+    }
+  }
+
+  drawSystemCalls(g, xScale, yScale){
+      g.selectAll('path')
+    .data(this.props.data.filter(d => d.visible), d => d.newName)
+    .join(
+      enter => enter.append('path')
+        .attr('class', 'thread-chart__context-view__system-call-group__arrow')
+        .attr('transform', d => `translate(0, ${yScale(d.newName) - 2 + yScale.bandwidth() / 4})`)
+        .attr('d', d => this.syscallArrowGenerator(d, xScale))
+        .attr("marker-end","url(#arrow)")
+        .style('stroke-width', 0.1)
+        .style('stroke', 'red')
+        .style('opacity', 0)
+        .call(update => update.transition(this.t)
+          .style('opacity', 1)),
+      update => update
+        .attr('d', d => this.syscallArrowGenerator(d, xScale))
+        .call(update => update.transition(this.t)
+          .attr('transform', d => `translate(0, ${yScale(d.newName) - 2 + yScale.bandwidth() / 4})`)),
+      exit => exit.transition(this.t)
+        .style('opacity', 0)
+        .remove()
+    )
+    
+    
+  }
+
   create() {
     this.createContextView()
     this.createFocusView()
@@ -152,7 +203,12 @@ class ThreadChart extends React.Component {
     this.drawGridLines(this.contextGridLineGroup, yScale)
 
     // thread slices
+    
     this.drawThreadSlices(this.contextSliceGroup, xScale, yScale)
+
+    //system calls
+    this.drawSystemCalls(this.systemCallGroup, xScale, yScale)
+    //
 
     // clipping path (prevents data overflow on x axis)
     contextView.append('clipPath')
@@ -232,6 +288,8 @@ class ThreadChart extends React.Component {
 
     // thread slices
     this.drawThreadSlices(this.contextSliceGroup, newXScale, newYScale)
+    //sys calls
+    this.drawSystemCalls(this.systemCallGroup, newXScale, newYScale)
   }
 
   updateFocusView(newXScale, newYScale) {
