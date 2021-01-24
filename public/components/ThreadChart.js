@@ -49,8 +49,7 @@ class ThreadChart extends React.Component {
     // FIXME: assuming there is only one type of data change right now 
     // # of visible threads changed
     const newThreads = this.props.data.filter(d => d.visible).map(d => d.newName)
-
-    this.contextYScale = this.contextYScale.copy().domain(newThreads)
+    this.contextYScale.domain(newThreads)
     this.updateContextView(this.xScale, this.contextYScale)
     this.updateFocusView(this.xScale, this.focusYScale)
   }
@@ -132,6 +131,7 @@ class ThreadChart extends React.Component {
   createContextView() {
     const { width, height, margin } = this.props
     const focusHeight = 100
+    const contextHeight = height - focusHeight
     const contextView = d3.select(this.contextView)
 
     // y-axis
@@ -162,6 +162,29 @@ class ThreadChart extends React.Component {
       .attr('y', margin.top)
       .attr('height', height - focusHeight)
       .attr('width', width - margin.left - margin.right)
+
+    // brush
+    const brush = d3.brush()
+      .extent([[margin.left, 0.5], [width - margin.right, contextHeight - margin.bottom + 0.5]])
+      .on('end', brushended.bind(this))
+
+    const contextBrushGroup = contextView.append('g')
+      .attr('class', 'thread-chart__context-view__brush')
+      .call(brush)
+
+    function brushended({ selection }) {
+      const xScale = this.xScale.copy().domain(this.focus || this.xScale.domain())
+      const yScale = this.contextYScale.copy()
+      if (!selection) {
+        this.updateContextView(xScale, yScale)
+      } else {
+        const newXScale = xScale.domain([selection[0][0], selection[1][0]].map(xScale.invert))
+        const newYDomain = yScale.domain().slice(...[selection[0][1], selection[1][1]].map(d => Math.floor(d / yScale.step())))
+        const newYScale = yScale.domain(newYDomain)
+        contextBrushGroup.call(brush.clear)
+        this.updateContextView(newXScale, newYScale)
+      }
+    }
   }
 
   createFocusView() {
@@ -182,16 +205,15 @@ class ThreadChart extends React.Component {
     this.drawThreadSlices(this.focusSliceGroup, xScale, yScale, 5)
 
     // Brush
-    const brushed = ({ selection }) => {
-      const focus = (!selection) ? xScale.domain() : selection.map(xScale.invert).map(Math.floor)
-      const newContextXScale = this.xScale.copy().domain(focus)
+    const brushended = ({ selection }) => {
+      this.focus = (!selection) ? null : selection.map(xScale.invert).map(Math.floor)
+      const newContextXScale = xScale.copy().domain(this.focus || xScale.domain())
       this.updateContextView(newContextXScale, this.contextYScale)
     }
 
     const brush = d3.brushX()
       .extent([[margin.left, 0], [width - margin.right, focusHeight - margin.bottom]])
-      .on('brush', brushed)
-      .on('end', brushed)
+      .on('end', brushended)
 
     brushPanel.append('g')
       .attr('class', 'thread-chart__focus-view__brush')
