@@ -3,12 +3,15 @@ class App extends React.Component {
     super(props)
 
     this.updateThreads = threads => this.setState({ threads })
+    this.updateShowSysCalls = showSysCalls => this.setState({showSysCalls})
 
     this.state = {
       threads: [],
       syscall:[],
+      showSysCalls: false,
       isLoading: true,
       updateThreads: this.updateThreads,
+      updateShowSysCalls: this.updateShowSysCalls,
       getSyscalls: this.getSyscalls.bind(this)
     }
   }
@@ -51,12 +54,11 @@ class App extends React.Component {
   }
 
   async getSyscalls(){
-    const syscall = await d3.json('http://localhost:3000/executions/1/syscalls/')
-    this.setState({threads :  syscall.map(x => Object.assign(x, this.state.threads.find(y => y.thread_id == x.thread_id)))})
-    // this.setState( 
-    //   (state,props) => 
-    //   { return {threads :  syscall.map(x => Object.assign(x, state.threads.find(y => y.thread_id == x.thread_id)))}
-    //   })
+    if(!this.state.threads[0].hasOwnProperty('syscalls')){
+      const syscall = await d3.json('http://localhost:3000/executions/1/syscalls/')
+      this.setState({threads :  syscall.map(x => Object.assign(x, this.state.threads.find(y => y.thread_id == x.thread_id)))})
+    }
+    
   }
 
   render() {
@@ -65,6 +67,7 @@ class App extends React.Component {
       <React.Fragment>
         <Header 
           getSyscalls = {this.state.getSyscalls}
+          updateShowSysCalls = {this.updateShowSysCalls}
         />
         <div className="container">
           {!this.state.isLoading &&
@@ -76,6 +79,7 @@ class App extends React.Component {
               <ThreadChart
                 data={this.state.threads}
                 height={this.state.threads.length * 30 + 100}
+                showSysCalls = {this.state.showSysCalls}
                 width={1000}
                 margin={{
                   top: 10,
@@ -83,7 +87,7 @@ class App extends React.Component {
                   bottom: 30,
                   left: 120
                 }} 
-              
+                
                 />
             </main>}
         </div>

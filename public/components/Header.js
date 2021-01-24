@@ -5,7 +5,7 @@ class Header extends React.Component {
     this.state = {
       executions: [],
       threads: [],
-      isSyscallOn: false
+      isSyscallOn: true
 
       
     }
@@ -30,6 +30,7 @@ class Header extends React.Component {
     this.setState(prevState => ({
       isSyscallOn: !prevState.isSyscallOn
     }));
+    this.props.updateShowSysCalls(this.state.isSyscallOn)
   }
 
   render() {

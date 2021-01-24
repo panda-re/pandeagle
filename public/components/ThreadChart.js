@@ -53,7 +53,7 @@ class ThreadChart extends React.Component {
     // FIXME: assuming there is only one type of data change right now 
     // # of visible threads changed
     const newThreads = this.props.data.filter(d => d.visible).map(d => d.newName)
-    console.log(this.props.data)
+    //console.log(this.props.data)
     this.contextYScale = this.contextYScale.copy().domain(newThreads)
     this.updateContextView(this.xScale, this.contextYScale)
     this.updateFocusView(this.xScale, this.focusYScale)
@@ -130,7 +130,7 @@ class ThreadChart extends React.Component {
 
   syscallArrowGenerator(d,xScale){
     //console.log(d)
-    if(d.hasOwnProperty('syscalls')){
+    if(d.hasOwnProperty('syscalls') && this.props.showSysCalls){
       const xOffsets =  data => data['syscalls'].map(d => d.execution_offset)
       //console.log(xOffsets)
       const arrowPoint = xOffsets(d)
@@ -150,7 +150,7 @@ class ThreadChart extends React.Component {
   }
 
   drawSystemCalls(g, xScale, yScale){
-    g.selectAll('path')
+      g.selectAll('path')
     .data(this.props.data.filter(d => d.visible), d => d.newName)
     .join(
       enter => enter.append('path')
@@ -171,6 +171,8 @@ class ThreadChart extends React.Component {
         .style('opacity', 0)
         .remove()
     )
+    
+    
   }
 
   create() {
