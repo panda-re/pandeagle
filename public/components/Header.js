@@ -7,7 +7,7 @@ class Header extends React.Component {
       threads: [],
       isSyscallOn: true
 
-      
+
     }
     this.handleSysClick = this.handleSysClick.bind(this);
   }
@@ -25,7 +25,9 @@ class Header extends React.Component {
     d3.json('/executions/1/threadslices').then(threads => this.setState({ threads }))
   }
 
-  handleSysClick() {
+  handleSysClick(e) {
+    e.preventDefault()
+
     this.props.getSyscalls()
     this.setState(prevState => ({
       isSyscallOn: !prevState.isSyscallOn
