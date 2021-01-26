@@ -5,9 +5,8 @@ class Header extends React.Component {
     this.state = {
       executions: [],
       threads: [],
-      isSyscallOn: true
-
-
+      isSyscallOn: true,
+      showForm: false
     }
     this.handleSysClick = this.handleSysClick.bind(this);
   }
@@ -35,8 +34,8 @@ class Header extends React.Component {
     this.props.updateShowSysCalls(this.state.isSyscallOn)
   }
 
-  switchDatabase = () => {
-    
+  toggleForm = () => {
+    showForm = !showForm;
   }
 
   render() {
@@ -65,10 +64,11 @@ class Header extends React.Component {
           </button>
         </form>
         <div className="col-auto ml-auto">
-          <button onClick={this.switchDatabase} className="form-control">
+          <button className="form-control" data-toggle="modal" data-target="#databaseForm">
             Switch Database
           </button>
         </div>
+        <DatabaseForm />
       </header>
     )
   }
