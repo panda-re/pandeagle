@@ -1,5 +1,6 @@
 const express = require('express');
 const { Pool } = require('pg');
+const fs = require('fs');
 const path = require('path');
 const app = express();
 const conn = require('./database.js');
@@ -19,7 +20,6 @@ app.get('/executions', (req, res) => {
         })
         .catch((err) => {
             console.log(err);
-            console.log("pool.idleCount: " + pool.idleCount);
             res.status(400);
             res.json(err);
         });
@@ -76,7 +76,24 @@ app.get('/executions/:executionId/threads', (req, res) => {
         });
 });
 
-
+app.post('/saveDBConfig', (req, res) => {
+    const dbInfo = req.body;
+    dbInfo.ssl = true;
+    const dbInfoStr = JSON.stringify(dbInfo);
+    fs.writeFile('config.json', dbInfoStr, (err) => {
+        if (err) throw err;
+        conn.reconnect(dbInfo)
+        .then(() => {
+            res.status(200);
+            res.send();
+        })
+        .catch((err) => {
+            console.log(err);
+            res.status(400);
+            res.json(err);
+        });
+    });
+});
 
 app.listen(port, () => {
     console.log(`Example app listening at http://localhost:${port}`);
