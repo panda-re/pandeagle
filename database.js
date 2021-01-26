@@ -1,12 +1,15 @@
 const { Pool } = require('pg');
+const fs = require('fs');
+
+const dbConfig = JSON.parse(fs.readFileSync('config.json', 'UTF-8'));
 
 const pool = new Pool({
-    user: 'shenx',
-    host: 'pandeagle.csse.rose-hulman.edu',
-    database: 'pandelephant2',
-    password: '123456',
-    port: 5432,
-    ssl: true
+    user: dbConfig.user,
+    host: dbConfig.host,
+    database: dbConfig.database,
+    password: dbConfig.password,
+    port: dbConfig.port,
+    ssl: dbConfig.ssl
 });
 
 pool.on('error', (err, client) => {
