@@ -35,6 +35,10 @@ class Header extends React.Component {
     this.props.updateShowSysCalls(this.state.isSyscallOn)
   }
 
+  switchDatabase = () => {
+    
+  }
+
   render() {
     return (
       <header className="navbar navbar-expand-lg navbar-light bg-light">
@@ -60,6 +64,11 @@ class Header extends React.Component {
             {this.state.isSyscallOn ? 'ON' : 'OFF'}
           </button>
         </form>
+        <div className="col-auto ml-auto">
+          <button onClick={this.switchDatabase} className="form-control">
+            Switch Database
+          </button>
+        </div>
       </header>
     )
   }
