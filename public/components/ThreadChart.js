@@ -10,7 +10,6 @@ class ThreadChart extends React.Component {
   }
 
   componentDidMount() {
-    console.log("1")
     const { data, width, height, margin } = this.props
     const focusHeight = 100
     const maxTime = Math.max(...data.map(t => Math.max(...t.thread_slices.map(d => d.end_execution_offset))))
@@ -18,13 +17,17 @@ class ThreadChart extends React.Component {
     const contextView = d3.select(this.contextView)
     const focusView = d3.select(this.focusView)
 
-    this.xScale = d3.scaleLinear()
+    this.contextXScale = d3.scaleLinear()
       .domain([minTime, maxTime])
       .range([margin.left, width - margin.right])
+    this.focusXScale = this.contextXScale.copy()
     this.contextYScale = d3.scaleBand()
       .domain(data.map(d => d.newName))
       .range([margin.top, height - focusHeight - margin.bottom])
     this.focusYScale = this.contextYScale.copy().range([margin.top, focusHeight - margin.bottom])
+
+    this.focus = null
+    this.lastContextYIndexOffset = 0
 
     this.contextXAxis = contextView.append('g')
       .attr('class', 'thread-chart__context-view__x-axis')
@@ -52,10 +55,13 @@ class ThreadChart extends React.Component {
   componentDidUpdate() {
     // FIXME: assuming there is only one type of data change right now 
     // # of visible threads changed
-    const newThreads = this.props.data.filter(d => d.visible).map(d => d.newName)
-    this.contextYScale.domain(newThreads)
-    this.updateContextView(this.xScale, this.contextYScale)
-    this.updateFocusView(this.xScale, this.focusYScale)
+    const { data } = this.props
+
+    const newContextYDomain = data.filter(d => d.visible).map(d => d.newName)
+    this.contextYScale.domain(newContextYDomain)
+
+    this.updateContextView(this.contextXScale, this.contextYScale)
+    this.updateFocusView(this.focusXScale, this.focusYScale)
   }
 
   get t() {
@@ -195,7 +201,7 @@ class ThreadChart extends React.Component {
       .call(g => g.selectAll('text').style('font-size', '1.4em'))
 
     // x-axis
-    const xScale = this.xScale
+    const xScale = this.contextXScale
     const xAxis = d3.axisBottom(xScale)
     this.contextXAxis.call(xAxis)
 
@@ -229,24 +235,36 @@ class ThreadChart extends React.Component {
       .call(brush)
 
     function brushended({ selection }) {
-      const xScale = this.xScale.copy().domain(this.focus || this.xScale.domain())
-      const yScale = this.contextYScale.copy()
       if (!selection) {
-        this.updateContextView(xScale, yScale)
+        const newXScale = this.contextXScale.copy().domain(this.focus || this.focusXScale.domain())
+        const newYScale = this.focusYScale.copy().range([margin.top, height - focusHeight - margin.bottom])
+
+        this.contextXScale = newXScale
+        this.contextYScale = newYScale
+        this.lastContextYIndexOffset = 0
+
+        this.updateContextView(newXScale, newYScale)
       } else {
+        const newXScale = this.contextXScale.copy().domain(this.focus || this.focusXScale.domain())
+        const newYScale = this.contextYScale.copy()
         const newXDomain = [selection[0][0], selection[1][0]].map(xScale.invert)
-        const newXScale = xScale.domain(newXDomain)
-        const newYIndices = [selection[0][1], selection[1][1]].map(d => Math.floor(d / yScale.step()))
+        newXScale.domain(newXDomain)
+        const newYIndices = [selection[0][1], selection[1][1]].map(d => this.lastContextYIndexOffset + Math.round(d / newYScale.step()))
         const newYDomain = data.slice(...newYIndices)
           .filter(d => d.thread_slices.some(d => d.start_execution_offset >= newXDomain[0] && d.end_execution_offset <= newXDomain[1]))
           .map(d => d.newName)
-        // check if the selected area is empty
+
         contextBrushGroup.call(brush.clear)
-        if (newYDomain.length === 0) {
-          return
-        } else {
-          const newYScale = yScale.domain(newYDomain)
-          this.updateContextView(newXScale, newYScale)
+
+        // check if the selected area is empty
+        if (newYDomain.length !== 0) {
+          newYScale.domain(newYDomain)
+
+          this.contextXScale = newXScale
+          this.contextYScale = newYScale
+          this.lastContextYIndexOffset = newYIndices[0]
+
+          this.updateContextView(this.contextXScale, this.contextYScale)
         }
       }
     }
@@ -257,7 +275,7 @@ class ThreadChart extends React.Component {
     const focusHeight = 100
 
     // x-axis
-    const xScale = this.xScale
+    const xScale = this.focusXScale
     const xAxis = d3.axisBottom(xScale)
 
     this.focusXAxis.call(xAxis)
@@ -273,6 +291,9 @@ class ThreadChart extends React.Component {
     const brushended = ({ selection }) => {
       this.focus = (!selection) ? null : selection.map(xScale.invert).map(Math.floor)
       const newContextXScale = xScale.copy().domain(this.focus || xScale.domain())
+
+      this.contextXScale = newContextXScale
+
       this.updateContextView(newContextXScale, this.contextYScale)
     }
 
