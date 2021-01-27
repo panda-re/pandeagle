@@ -11,7 +11,7 @@ class ThreadChart extends React.Component {
 
   componentDidMount() {
     console.log("1")
-    const { data, width, height, margin} = this.props
+    const { data, width, height, margin } = this.props
     const focusHeight = 100
     const maxTime = Math.max(...data.map(t => Math.max(...t.thread_slices.map(d => d.end_execution_offset))))
     const minTime = Math.min(...data.map(t => Math.min(...t.thread_slices.map(d => d.start_execution_offset))))
@@ -127,51 +127,51 @@ class ThreadChart extends React.Component {
       )
   }
 
-  syscallArrowGenerator(d,xScale){
+  syscallArrowGenerator(d, xScale) {
     //console.log(d)
-    if(d.hasOwnProperty('syscalls') && this.props.showSysCalls){
-      const xOffsets =  data => data['syscalls'].map(d => d.execution_offset)
+    if (d.hasOwnProperty('syscalls') && this.props.showSysCalls) {
+      const xOffsets = data => data['syscalls'].map(d => d.execution_offset)
       //console.log(xOffsets)
       const arrowPoint = xOffsets(d)
       //console.log(arrowPoint)
       //const line = d3.line().context(context);
       const context = d3.path()
-  
+
       for (let i = 0; i < arrowPoint.length; i++) {
         context.moveTo(xScale(arrowPoint[i]), 0)
         context.lineTo(xScale(arrowPoint[i]), 4)
       }
-  
+
       //console.log(context)
-  
+
       return context
     }
   }
 
-  drawSystemCalls(g, xScale, yScale){
-      g.selectAll('path')
-    .data(this.props.data.filter(d => d.visible), d => d.newName)
-    .join(
-      enter => enter.append('path')
-        .attr('class', 'thread-chart__context-view__system-call-group__arrow')
-        .attr('transform', d => `translate(0, ${yScale(d.newName) - 2 + yScale.bandwidth() / 4})`)
-        .attr('d', d => this.syscallArrowGenerator(d, xScale))
-        .attr("marker-end","url(#arrow)")
-        .style('stroke-width', 0.1)
-        .style('stroke', 'red')
-        .style('opacity', 0)
-        .call(update => update.transition(this.t)
-          .style('opacity', 1)),
-      update => update
-        .attr('d', d => this.syscallArrowGenerator(d, xScale))
-        .call(update => update.transition(this.t)
-          .attr('transform', d => `translate(0, ${yScale(d.newName) - 2 + yScale.bandwidth() / 4})`)),
-      exit => exit.transition(this.t)
-        .style('opacity', 0)
-        .remove()
-    )
-    
-    
+  drawSystemCalls(g, xScale, yScale) {
+    g.selectAll('path')
+      .data(this.props.data.filter(d => d.visible), d => d.newName)
+      .join(
+        enter => enter.append('path')
+          .attr('class', 'thread-chart__context-view__system-call-group__arrow')
+          .attr('transform', d => `translate(0, ${yScale(d.newName) - 2 + yScale.bandwidth() / 4})`)
+          .attr('d', d => this.syscallArrowGenerator(d, xScale))
+          .attr("marker-end", "url(#arrow)")
+          .style('stroke-width', 0.1)
+          .style('stroke', 'red')
+          .style('opacity', 0)
+          .call(update => update.transition(this.t)
+            .style('opacity', 1)),
+        update => update
+          .attr('d', d => this.syscallArrowGenerator(d, xScale))
+          .call(update => update.transition(this.t)
+            .attr('transform', d => `translate(0, ${yScale(d.newName) - 2 + yScale.bandwidth() / 4})`)),
+        exit => exit.transition(this.t)
+          .style('opacity', 0)
+          .remove()
+      )
+
+
   }
 
   create() {
@@ -180,7 +180,7 @@ class ThreadChart extends React.Component {
   }
 
   createContextView() {
-    const { width, height, margin } = this.props
+    const { width, height, margin, data } = this.props
     const focusHeight = 100
     const contextHeight = height - focusHeight
     const contextView = d3.select(this.contextView)
@@ -203,7 +203,7 @@ class ThreadChart extends React.Component {
     this.drawGridLines(this.contextGridLineGroup, yScale)
 
     // thread slices
-    
+
     this.drawThreadSlices(this.contextSliceGroup, xScale, yScale)
 
     //system calls
@@ -234,11 +234,20 @@ class ThreadChart extends React.Component {
       if (!selection) {
         this.updateContextView(xScale, yScale)
       } else {
-        const newXScale = xScale.domain([selection[0][0], selection[1][0]].map(xScale.invert))
-        const newYDomain = yScale.domain().slice(...[selection[0][1], selection[1][1]].map(d => Math.floor(d / yScale.step())))
-        const newYScale = yScale.domain(newYDomain)
+        const newXDomain = [selection[0][0], selection[1][0]].map(xScale.invert)
+        const newXScale = xScale.domain(newXDomain)
+        const newYIndices = [selection[0][1], selection[1][1]].map(d => Math.floor(d / yScale.step()))
+        const newYDomain = data.slice(...newYIndices)
+          .filter(d => d.thread_slices.some(d => d.start_execution_offset >= newXDomain[0] && d.end_execution_offset <= newXDomain[1]))
+          .map(d => d.newName)
+        // check if the selected area is empty
         contextBrushGroup.call(brush.clear)
-        this.updateContextView(newXScale, newYScale)
+        if (newYDomain.length === 0) {
+          return
+        } else {
+          const newYScale = yScale.domain(newYDomain)
+          this.updateContextView(newXScale, newYScale)
+        }
       }
     }
   }
