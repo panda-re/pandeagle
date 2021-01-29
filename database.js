@@ -1,12 +1,15 @@
 const { Pool } = require('pg');
+const fs = require('fs');
 
-const pool = new Pool({
-    user: 'shenx',
-    host: 'pandeagle.csse.rose-hulman.edu',
-    database: 'pandelephant2',
-    password: '123456',
-    port: 5432,
-    ssl: true
+const dbConfig = JSON.parse(fs.readFileSync('config.json', 'UTF-8'));
+
+let pool = new Pool({
+    user: dbConfig.user,
+    host: dbConfig.host,
+    database: dbConfig.database,
+    password: dbConfig.password,
+    port: +dbConfig.port,
+    ssl: dbConfig.ssl
 });
 
 pool.on('error', (err, client) => {
@@ -74,6 +77,9 @@ const conn = {
                 GROUP BY t.thread_id, t.names 
                 ORDER BY thread_id ` + (!pageSize ? "" : `LIMIT $5 OFFSET $6`), (!pageSize ? [executionId, threadIds, start, end] : [executionId, threadIds, start, end, pageSize, pageSize * pageIndex]));
     },
+    reconnect: async function (dbInfo) {
+        pool.end().then(() => pool = new Pool(dbInfo));
+    }
 };
 
 module.exports = conn;

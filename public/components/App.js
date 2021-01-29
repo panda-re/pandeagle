@@ -17,7 +17,7 @@ class App extends React.Component {
   }
 
   async componentDidMount() {
-    const data = await d3.json('http://localhost:3000/executions/1/threadslices')
+    const data = await d3.json('/executions/1/threadslices')
     //const syscall = await d3.json('http://localhost:3000/executions/1/syscalls/')
     let threadNames = this.renameDuplicates(data.map(data => data["names"].join(" ")))
 
@@ -55,7 +55,7 @@ class App extends React.Component {
 
   async getSyscalls(){
     if(!this.state.threads[0].hasOwnProperty('syscalls')){
-      const syscall = await d3.json('http://localhost:3000/executions/1/syscalls/')
+      const syscall = await d3.json('/executions/1/syscalls/')
       this.setState({threads :  syscall.map(x => Object.assign(x, this.state.threads.find(y => y.thread_id == x.thread_id)))})
     }
     
