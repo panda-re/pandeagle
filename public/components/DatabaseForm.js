@@ -45,7 +45,7 @@ class DatabaseForm extends React.Component {
                 <div className="form-group row">
                   <label className="col-sm-2 col-form-label">Username</label>
                   <div className="col-sm-10">
-                    <input type="text" className="form-control" name="username" placeholder="shenx" required />
+                    <input type="text" className="form-control" name="user" placeholder="shenx" required />
                   </div>
                 </div>
                 <div className="form-group row">
