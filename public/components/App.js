@@ -3,22 +3,31 @@ class App extends React.Component {
     super(props)
 
     this.updateThreads = threads => this.setState({ threads })
-    this.updateShowSysCalls = showSysCalls => this.setState({showSysCalls})
+    this.updateShowSysCalls = showSysCalls => this.setState({ showSysCalls })
+    this.databaseFail = () => this.setState({ databaseError: true })
+    this.resetDatabase = () => this.setState({ databaseError: false })
 
     this.state = {
       threads: [],
-      syscall:[],
+      syscall: [],
       showSysCalls: false,
       isLoading: true,
       updateThreads: this.updateThreads,
       updateShowSysCalls: this.updateShowSysCalls,
-      getSyscalls: this.getSyscalls.bind(this)
+      getSyscalls: this.getSyscalls.bind(this),
+      databaseError: false,
     }
   }
 
   async componentDidMount() {
     const data = await d3.json('/executions/1/threadslices')
+      .catch((err) => {
+        this.databaseFail()
+        this.setState({ isLoading: false })
+      })
     //const syscall = await d3.json('http://localhost:3000/executions/1/syscalls/')
+
+    if (!data) return
     let threadNames = this.renameDuplicates(data.map(data => data["names"].join(" ")))
 
     for (let i = 0; i < data.length; i++) {
@@ -28,9 +37,9 @@ class App extends React.Component {
     }
 
     //const result = syscall.map(x => Object.assign(x, data.find(y => y.thread_id == x.thread_id)))
-     //console.log(result)
-     //console.log(data)
-    this.setState({ threads: data,isLoading: false })
+    //console.log(result)
+    //console.log(data)
+    this.setState({ threads: data, isLoading: false })
   }
 
   renameDuplicates(threadNames) {
@@ -53,21 +62,26 @@ class App extends React.Component {
     return newNames
   }
 
-  async getSyscalls(){
-    if(!this.state.threads[0].hasOwnProperty('syscalls')){
-      const syscall = await d3.json('/executions/1/syscalls/')
-      this.setState({threads :  syscall.map(x => Object.assign(x, this.state.threads.find(y => y.thread_id == x.thread_id)))})
+  async getSyscalls() {
+    if (!this.state.threads[0].hasOwnProperty('syscalls')) {
+      const syscall = await d3.json('/executions/1/syscalls/')
+        .catch((err) => {
+          this.databaseFail()
+        })
+      this.setState({ threads: syscall.map(x => Object.assign(x, this.state.threads.find(y => y.thread_id == x.thread_id))) })
     }
-    
-  }
 
+  }
+  
   render() {
     return (
       // <ThreadListContext.Provider value={this.state}>
       <React.Fragment>
-        <Header 
-          getSyscalls = {this.state.getSyscalls}
-          updateShowSysCalls = {this.updateShowSysCalls}
+        <Header
+          getSyscalls={this.state.getSyscalls}
+          updateShowSysCalls={this.updateShowSysCalls}
+          databaseFail={this.databaseFail}
+          resetDatabase={this.resetDatabase}
         />
         <div className="container">
           {!this.state.isLoading &&
@@ -77,18 +91,18 @@ class App extends React.Component {
           {!this.state.isLoading &&
             <main className="main">
               <ThreadChart
+                databaseError={this.state.databaseError}
                 data={this.state.threads}
                 height={this.state.threads.length * 30 + 100}
-                showSysCalls = {this.state.showSysCalls}
+                showSysCalls={this.state.showSysCalls}
                 width={1000}
                 margin={{
                   top: 10,
                   right: 20,
                   bottom: 30,
                   left: 120
-                }} 
-                
-                />
+                }}
+              />
             </main>}
         </div>
       </React.Fragment>

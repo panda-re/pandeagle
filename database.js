@@ -12,10 +12,6 @@ let pool = new Pool({
     ssl: dbConfig.ssl
 });
 
-pool.on('error', (err, client) => {
-    console.error('Unexpected error on idle client', err);
-});
-
 const conn = {
     getAllExecutions: async function () {
         return pool.query('SELECT * FROM Executions');
