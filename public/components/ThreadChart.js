@@ -10,7 +10,6 @@ class ThreadChart extends React.Component {
   }
 
   componentDidMount() {
-    console.log("1")
     const { data, width, height, margin} = this.props
     const focusHeight = 100
     const maxTime = Math.max(...data.map(t => Math.max(...t.thread_slices.map(d => d.end_execution_offset))))
@@ -127,7 +126,7 @@ class ThreadChart extends React.Component {
       )
   }
 
-  syscallArrowGenerator(d,xScale){
+  syscallArrowGenerator(d,xScale, distance){
     //console.log(d)
     if(d.hasOwnProperty('syscalls') && this.props.showSysCalls){
       const xOffsets =  data => data['syscalls'].map(d => d.execution_offset)
@@ -138,8 +137,8 @@ class ThreadChart extends React.Component {
       const context = d3.path()
   
       for (let i = 0; i < arrowPoint.length; i++) {
-        context.moveTo(xScale(arrowPoint[i]), 0)
-        context.lineTo(xScale(arrowPoint[i]), 4)
+        context.moveTo(xScale(arrowPoint[i]), distance-8)
+        context.lineTo(xScale(arrowPoint[i]), distance-4)
       }
   
       //console.log(context)
@@ -154,8 +153,8 @@ class ThreadChart extends React.Component {
     .join(
       enter => enter.append('path')
         .attr('class', 'thread-chart__context-view__system-call-group__arrow')
-        .attr('transform', d => `translate(0, ${yScale(d.newName) - 2 + yScale.bandwidth() / 4})`)
-        .attr('d', d => this.syscallArrowGenerator(d, xScale))
+        .attr('transform', d => `translate(0, ${yScale(d.newName) + yScale.bandwidth() / 4})`)
+        .attr('d', d => this.syscallArrowGenerator(d, xScale, - 2 +yScale.bandwidth() / 4 ))
         .attr("marker-end","url(#arrow)")
         .style('stroke-width', 0.1)
         .style('stroke', 'red')
@@ -163,9 +162,9 @@ class ThreadChart extends React.Component {
         .call(update => update.transition(this.t)
           .style('opacity', 1)),
       update => update
-        .attr('d', d => this.syscallArrowGenerator(d, xScale))
+        .attr('d', d => this.syscallArrowGenerator(d, xScale, yScale.bandwidth() / 4))
         .call(update => update.transition(this.t)
-          .attr('transform', d => `translate(0, ${yScale(d.newName) - 2 + yScale.bandwidth() / 4})`)),
+          .attr('transform', d => `translate(0, ${yScale(d.newName) - 2  + yScale.bandwidth() / 4})`)),
       exit => exit.transition(this.t)
         .style('opacity', 0)
         .remove()
@@ -289,6 +288,7 @@ class ThreadChart extends React.Component {
     // thread slices
     this.drawThreadSlices(this.contextSliceGroup, newXScale, newYScale)
     //sys calls
+    console.log(newXScale)
     this.drawSystemCalls(this.systemCallGroup, newXScale, newYScale)
   }
 
