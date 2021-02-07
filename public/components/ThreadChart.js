@@ -236,8 +236,11 @@ class ThreadChart extends React.Component {
 
     function brushended({ selection }) {
       if (!selection) {
-        const newXScale = this.contextXScale.copy().domain(this.focus || this.focusXScale.domain())
-        const newYScale = this.focusYScale.copy().range([margin.top, height - focusHeight - margin.bottom])
+        const xDomain = this.focus || this.focusXScale.domain()
+        const yDomain = data.filter(d => d.visible).map(d => d.newName)
+
+        const newXScale = this.focusXScale.copy().domain(xDomain)
+        const newYScale = this.focusYScale.copy().domain(yDomain).range([margin.top, height - focusHeight - margin.bottom])
 
         this.contextXScale = newXScale
         this.contextYScale = newYScale
@@ -245,21 +248,20 @@ class ThreadChart extends React.Component {
 
         this.updateContextView(newXScale, newYScale)
       } else {
-        const newXScale = this.contextXScale.copy().domain(this.focus || this.focusXScale.domain())
-        const newYScale = this.contextYScale.copy()
-        const newXDomain = [selection[0][0], selection[1][0]].map(xScale.invert)
-        newXScale.domain(newXDomain)
-        const newYIndices = [selection[0][1], selection[1][1]].map(d => this.lastContextYIndexOffset + Math.round(d / newYScale.step()))
+        const newXDomain = [selection[0][0], selection[1][0]].map(this.contextXScale.invert)
+        const newYIndices = [selection[0][1], selection[1][1]].map(d => this.lastContextYIndexOffset + Math.round(d / this.contextYScale.step()))
         const newYDomain = data.slice(...newYIndices)
           .filter(d => d.thread_slices.some(d => d.start_execution_offset >= newXDomain[0] && d.end_execution_offset <= newXDomain[1]))
           .map(d => d.newName)
 
+        const newXScale = this.contextXScale.copy().domain(newXDomain)
+        const newYScale = this.contextYScale.copy().domain(newYDomain)
+
         contextBrushGroup.call(brush.clear)
 
-        // check if the selected area is empty
+        // check if the selected area has any thread slice
+        // if no, do nothing
         if (newYDomain.length !== 0) {
-          newYScale.domain(newYDomain)
-
           this.contextXScale = newXScale
           this.contextYScale = newYScale
           this.lastContextYIndexOffset = newYIndices[0]
