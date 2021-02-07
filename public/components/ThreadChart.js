@@ -7,6 +7,11 @@
 class ThreadChart extends React.Component {
   constructor(props) {
     super(props)
+
+    this.state = {
+      newXScale: null,
+      newYScale:null
+    }
   }
 
   componentDidMount() {
@@ -53,8 +58,15 @@ class ThreadChart extends React.Component {
     // # of visible threads changed
     const newThreads = this.props.data.filter(d => d.visible).map(d => d.newName)
     this.contextYScale.domain(newThreads)
-    this.updateContextView(this.xScale, this.contextYScale)
+    if(this.state.newXScale === null){
+      this.updateContextView(this.xScale, this.contextYScale)
+    }else{
+      this.updateContextView(this.state.newXScale, this.state.newYScale)
+    }
+    
     this.updateFocusView(this.xScale, this.focusYScale)
+    // console.log(this.xScale)
+    // console.log(this.yScale)
   }
 
   get t() {
@@ -156,7 +168,7 @@ class ThreadChart extends React.Component {
         .attr('transform', d => `translate(0, ${yScale(d.newName) + yScale.bandwidth() / 4})`)
         .attr('d', d => this.syscallArrowGenerator(d, xScale, - 2 +yScale.bandwidth() / 4 ))
         .attr("marker-end","url(#arrow)")
-        .style('stroke-width', 0.1)
+        .style('stroke-width', 0.2)
         .style('stroke', 'red')
         .style('opacity', 0)
         .call(update => update.transition(this.t)
@@ -231,12 +243,14 @@ class ThreadChart extends React.Component {
       const xScale = this.xScale.copy().domain(this.focus || this.xScale.domain())
       const yScale = this.contextYScale.copy()
       if (!selection) {
+        this.setState({newXScale: null, newYScale:null})
         this.updateContextView(xScale, yScale)
       } else {
         const newXScale = xScale.domain([selection[0][0], selection[1][0]].map(xScale.invert))
         const newYDomain = yScale.domain().slice(...[selection[0][1], selection[1][1]].map(d => Math.floor(d / yScale.step())))
         const newYScale = yScale.domain(newYDomain)
         contextBrushGroup.call(brush.clear)
+        this.setState({newXScale: newXScale, newYScale:newYScale})
         this.updateContextView(newXScale, newYScale)
       }
     }
