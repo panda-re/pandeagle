@@ -27,7 +27,6 @@ class ThreadChart extends React.Component {
     this.focusYScale = this.contextYScale.copy().range([margin.top, focusHeight - margin.bottom])
 
     this.focus = null
-    this.lastContextYIndexOffset = 0
 
     this.contextXAxis = contextView.append('g')
       .attr('class', 'thread-chart__context-view__x-axis')
@@ -244,14 +243,14 @@ class ThreadChart extends React.Component {
 
         this.contextXScale = newXScale
         this.contextYScale = newYScale
-        this.lastContextYIndexOffset = 0
 
         this.updateContextView(newXScale, newYScale)
       } else {
+        console.log('context y domain:', this.contextYScale.domain())
         const newXDomain = [selection[0][0], selection[1][0]].map(this.contextXScale.invert)
-        const newYIndices = [selection[0][1], selection[1][1]].map(d => this.lastContextYIndexOffset + Math.round(d / this.contextYScale.step()))
-        const newYDomain = data.slice(...newYIndices)
-          .filter(d => d.thread_slices.some(d => d.start_execution_offset >= newXDomain[0] && d.end_execution_offset <= newXDomain[1]))
+        const newThreads = this.contextYScale.domain().slice(...[selection[0][1], selection[1][1]].map(d => Math.round(d / this.contextYScale.step())))
+        const newYDomain = data.filter(d => newThreads.includes(d.newName) &&
+          d.thread_slices.some(d => d.start_execution_offset >= newXDomain[0] && d.end_execution_offset <= newXDomain[1]))
           .map(d => d.newName)
 
         const newXScale = this.contextXScale.copy().domain(newXDomain)
@@ -264,7 +263,6 @@ class ThreadChart extends React.Component {
         if (newYDomain.length !== 0) {
           this.contextXScale = newXScale
           this.contextYScale = newYScale
-          this.lastContextYIndexOffset = newYIndices[0]
 
           this.updateContextView(this.contextXScale, this.contextYScale)
         }
