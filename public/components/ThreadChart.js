@@ -47,6 +47,8 @@ class ThreadChart extends React.Component {
       .attr('transform', `translate(0, ${focusHeight - margin.bottom})`)
     this.focusSliceGroup = focusView.append('g')
       .attr('class', 'thread-chart__focus-view__slice-group')
+    this.contextViewSelectedArea = focusView.append('g')
+      .attr('class', 'thread-chart__focus-view__context-view-selected-area')
 
     this.create()
   }
@@ -244,9 +246,10 @@ class ThreadChart extends React.Component {
         this.contextXScale = newXScale
         this.contextYScale = newYScale
 
+        this.contextViewSelectedArea.select('rect').remove()
+
         this.updateContextView(newXScale, newYScale)
       } else {
-        console.log('context y domain:', this.contextYScale.domain())
         const newXDomain = [selection[0][0], selection[1][0]].map(this.contextXScale.invert)
         const newThreads = this.contextYScale.domain().slice(...[selection[0][1], selection[1][1]].map(d => Math.round(d / this.contextYScale.step())))
         const newYDomain = data.filter(d => newThreads.includes(d.newName) &&
@@ -261,6 +264,17 @@ class ThreadChart extends React.Component {
         // check if the selected area has any thread slice
         // if no, do nothing
         if (newYDomain.length !== 0) {
+          const [x1, x2] = newXDomain.map(this.focusXScale)
+          const [y1, y2] = [this.focusYScale(newYDomain[0]), this.focusYScale(newYDomain[newYDomain.length - 1]) + this.focusYScale.step()]
+          this.contextViewSelectedArea.append('rect')
+            .attr('x', x1)
+            .attr('y', y1)
+            .attr('width', x2 - x1)
+            .attr('height', y2 - y1)
+            .style('stroke', 'red')
+            .style('stroke-width', 1)
+            .style('fill', 'none')
+
           this.contextXScale = newXScale
           this.contextYScale = newYScale
 
