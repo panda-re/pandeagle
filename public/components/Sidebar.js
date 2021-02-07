@@ -65,7 +65,7 @@ class Sidebar extends React.Component {
           {this.props.data.filter(thread => thread.newName.includes(this.state.keyword)).map(thread =>
             <li key={thread.thread_id} className="list-group-item list-group-item-action d-flex w-100 justify-content-between" onClick={(event) => this.handleCheck(event, thread.thread_id)}>
               <span>{thread.newName}</span>
-              <input type="checkbox" checked={thread.visible} onChange={event => event.preventDefault()}></input>
+              <input type="checkbox" checked={thread.visible} />
             </li>
           )}
         </ul>
