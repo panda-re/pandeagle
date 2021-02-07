@@ -3,11 +3,11 @@ class App extends React.Component {
     super(props)
 
     this.updateThreads = threads => this.setState({ threads })
-    this.updateShowSysCalls = showSysCalls => this.setState({showSysCalls})
+    this.updateShowSysCalls = showSysCalls => this.setState({ showSysCalls })
 
     this.state = {
       threads: [],
-      syscall:[],
+      syscall: [],
       showSysCalls: false,
       isLoading: true,
       updateThreads: this.updateThreads,
@@ -27,10 +27,12 @@ class App extends React.Component {
       //data[i].syscalls = []
     }
 
+    data.sort((a, b) => a.newName.replace(/ *\([^)]*\) */g, '').localeCompare(b.newName.replace(/ *\([^)]*\) */g, '')))
+
     //const result = syscall.map(x => Object.assign(x, data.find(y => y.thread_id == x.thread_id)))
-     //console.log(result)
-     //console.log(data)
-    this.setState({ threads: data,isLoading: false })
+    //console.log(result)
+    //console.log(data)
+    this.setState({ threads: data, isLoading: false })
   }
 
   renameDuplicates(threadNames) {
@@ -53,21 +55,21 @@ class App extends React.Component {
     return newNames
   }
 
-  async getSyscalls(){
-    if(!this.state.threads[0].hasOwnProperty('syscalls')){
-      const syscall = await d3.json('/executions/1/syscalls/')
-      this.setState({threads :  syscall.map(x => Object.assign(x, this.state.threads.find(y => y.thread_id == x.thread_id)))})
+  async getSyscalls() {
+    if (!this.state.threads[0].hasOwnProperty('syscalls')) {
+      const syscall = await d3.json('/executions/1/syscalls/')
+      this.setState({ threads: syscall.map(x => Object.assign(x, this.state.threads.find(y => y.thread_id == x.thread_id))) })
     }
-    
+
   }
 
   render() {
     return (
       // <ThreadListContext.Provider value={this.state}>
       <React.Fragment>
-        <Header 
-          getSyscalls = {this.state.getSyscalls}
-          updateShowSysCalls = {this.updateShowSysCalls}
+        <Header
+          getSyscalls={this.state.getSyscalls}
+          updateShowSysCalls={this.updateShowSysCalls}
         />
         <div className="container">
           {!this.state.isLoading &&
@@ -79,16 +81,16 @@ class App extends React.Component {
               <ThreadChart
                 data={this.state.threads}
                 height={this.state.threads.length * 30 + 100}
-                showSysCalls = {this.state.showSysCalls}
+                showSysCalls={this.state.showSysCalls}
                 width={1000}
                 margin={{
                   top: 10,
                   right: 20,
                   bottom: 30,
                   left: 120
-                }} 
-                
-                />
+                }}
+
+              />
             </main>}
         </div>
       </React.Fragment>
