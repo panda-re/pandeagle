@@ -253,7 +253,9 @@ class ThreadChart extends React.Component {
         const newXDomain = [selection[0][0], selection[1][0]].map(this.contextXScale.invert)
         const newThreads = this.contextYScale.domain().slice(...[selection[0][1], selection[1][1]].map(d => Math.round(d / this.contextYScale.step())))
         const newYDomain = data.filter(d => newThreads.includes(d.newName) &&
-          d.thread_slices.some(d => d.start_execution_offset >= newXDomain[0] && d.end_execution_offset <= newXDomain[1]))
+          d.thread_slices.some(d => (newXDomain[0] <= d.start_execution_offset && d.start_execution_offset <= newXDomain[1]) ||
+            (newXDomain[0] <= d.end_execution_offset && d.end_execution_offset <= newXDomain[1]) ||
+            (d.start_execution_offset <= newXDomain[0] && newXDomain[1] <= d.end_execution_offset)))
           .map(d => d.newName)
 
         const newXScale = this.contextXScale.copy().domain(newXDomain)
