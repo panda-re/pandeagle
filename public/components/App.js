@@ -7,9 +7,12 @@ class App extends React.Component {
     this.databaseFail = () => this.setState({ databaseError: true })
     this.resetDatabase = () => this.setState({ databaseError: false })
 
+    this.handleZoom = this.handleZoom.bind(this)
+
     this.state = {
       threads: [],
       syscall: [],
+      zoomedThreads: [],
       showSysCalls: false,
       isLoading: true,
       updateThreads: this.updateThreads,
@@ -42,7 +45,11 @@ class App extends React.Component {
     //console.log(result)
     //console.log(data)
 
-    this.setState({ threads: data, isLoading: false })
+    this.setState({
+      threads: data,
+      zoomedThreads: threadNames,
+      isLoading: false
+    })
   }
 
   renameDuplicates(threadNames) {
@@ -75,7 +82,11 @@ class App extends React.Component {
     }
 
   }
-  
+
+  handleZoom(zoomedThreads) {
+    this.setState({ zoomedThreads })
+  }
+
   render() {
     return (
       <React.Fragment>
@@ -89,11 +100,14 @@ class App extends React.Component {
           {!this.state.isLoading &&
             <Sidebar
               data={this.state.threads}
-              updateThreads={this.updateThreads} />}
+              zoomedThreads={this.state.zoomedThreads}
+              updateThreads={this.updateThreads}
+            />}
           {!this.state.isLoading &&
             <main className="main">
               <ThreadChart
                 databaseError={this.state.databaseError}
+                zoomedThreads={this.state.zoomedThreads}
                 data={this.state.threads}
                 height={this.state.threads.length * 30 + 100}
                 showSysCalls={this.state.showSysCalls}
@@ -104,6 +118,7 @@ class App extends React.Component {
                   bottom: 30,
                   left: 120
                 }}
+                onZoom={this.handleZoom}
               />
             </main>}
         </div>
