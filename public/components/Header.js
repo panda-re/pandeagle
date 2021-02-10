@@ -5,14 +5,10 @@ class Header extends React.Component {
     this.state = {
       executions: [],
       threads: [],
-      ZoomBackOnce: false,
-      ZoomAllBack:false,
       isSyscallOn: true,
       showForm: false
     }
     this.handleSysClick = this.handleSysClick.bind(this);
-    this.handleZoomBackClick = this.handleZoomBackClick.bind(this);
-    this.handleZoomAllBackClick = this.handleZoomAllBackClick.bind(this);
   }
 
   componentDidMount() {
@@ -50,23 +46,6 @@ class Header extends React.Component {
     showForm = !showForm;
   }
 
-  handleZoomBackClick(e) {
-    e.preventDefault()
-    this.setState(prevState => ({
-      ZoomBackOnce: !prevState.ZoomBackOnce
-    }));
-    this.props.letZoomBackOnce(this.state.ZoomBackOnce);
-    console.log("clicked in header,current:" + this.state.ZoomBackOnce)
-  }
-
-  handleZoomAllBackClick(e) {
-    e.preventDefault()
-    this.setState(prevState => ({
-      ZoomAllBack: !prevState.ZoomAllBack
-    }));
-    this.props.letZoomAllBack(this.state.ZoomAllBack);
-  }
-
   render() {
     return (
       <header className="navbar navbar-expand-lg navbar-light bg-light">
@@ -90,12 +69,6 @@ class Header extends React.Component {
           </a>
           <button onClick={this.handleSysClick}>
             {this.state.isSyscallOn ? 'ON' : 'OFF'}
-          </button>
-          <button onClick={this.handleZoomBackClick}>
-            {"Zoom Back"}
-          </button>
-          <button onClick={this.handleZoomAllBackClick}>
-            {"Zoom Back All"}
           </button>
         </form>
 

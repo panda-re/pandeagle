@@ -1,23 +1,13 @@
-// const ThreadListContext = React.createContext({
-//   threads: [],
-//   isLoading: true,
-//   updateThreads: () => []
-// })
-
 class ThreadChart extends React.Component {
   constructor(props) {
     super(props)
 
-    this.state = {
-      // ZoomBackOnce: true,
-      // ZoomAllBack: true,
-      // newXScale: [],
-      // newYScale: []
-    }
+    this.handleZoomOutClick = this.handleZoomOutClick.bind(this)
+    this.handleResetClick = this.handleResetClick.bind(this)
   }
 
   componentDidMount() {
-    const { data, width, height, margin , ZoomBackOnce, ZoomAllBack} = this.props
+    const { data, width, height, margin } = this.props
     const focusHeight = 100
     const maxTime = Math.max(...data.map(t => Math.max(...t.thread_slices.map(d => d.end_execution_offset))))
     const minTime = Math.min(...data.map(t => Math.min(...t.thread_slices.map(d => d.start_execution_offset))))
@@ -34,10 +24,8 @@ class ThreadChart extends React.Component {
     this.focusYScale = this.contextYScale.copy().range([margin.top, focusHeight - margin.bottom])
 
     this.focus = null
-    this.ZoomAllBack = this.props.ZoomAllBack
-    this.ZoomBackOnce = this.props.ZoomBackOnce
-    this.newXScaleArray = [this.contextXScale]
-    this.newYScaleArray = [this.contextYScale]
+    this.XHistory = [this.contextXScale]
+    this.YHistory = [this.contextYScale]
 
     this.contextXAxis = contextView.append('g')
       .attr('class', 'thread-chart__context-view__x-axis')
@@ -65,63 +53,12 @@ class ThreadChart extends React.Component {
   }
 
   componentDidUpdate() {
-    // FIXME: assuming there is only one type of data change right now 
-    // # of visible threads changed
     const { data } = this.props
 
     const newContextYDomain = data.filter(d => d.visible).map(d => d.newName)
     this.contextYScale.domain(newContextYDomain)
-    //ZOOM BACK ONCE UPDATE
-    console.log("props: " + this.props.ZoomBackOnce + "  state: " + this.ZoomBackOnce )
-    if (this.props.ZoomBackOnce != this.ZoomBackOnce){
-      if(this.newXScaleArray.length > 2 ){
-        console.log("prepare unzoom")
-        // let xScaleArray = this.state.newXScale.pop()
-        // let yScaleArray = this.state.newYScale.pop()
-        // let newCXScale = xScaleArray.pop()
-        // let newCYScale = yScaleArray.pop()
 
-        this.newXScaleArray.pop()
-        this.newYScaleArray.pop()
-
-        let newCXScale = this.newXScaleArray[this.newXScaleArray.length-1]
-        let newCYScale = this.newYScaleArray[this.newYScaleArray.length-1]
-        console.log("poped " +newCXScale)
-
-        this.contextXScale = newCXScale
-        this.contextYScale = newCYScale
-        //this.updateContextView(newCXScale,newCYScale)
-        console.log("finished update")
-        this.ZoomBackOnce = !this.ZoomBackOnce
-        //this.setState({newXScale:xScaleArray, newYScale:yScaleArray})
-        //this.setState({ZoomBackOnce:this.props.ZoomBackOnce})
-        //console.log("set State")
-        //TODO: ADD UPDATE ON FOCUS VIEW
-      }else {
-        let newCXScale = this.newXScaleArray[0]
-        let newCYScale = this.newYScaleArray[0]
-
-        this.contextXScale = newCXScale
-        this.contextYScale = newCYScale
-        this.ZoomBackOnce = !this.ZoomBackOnce
-      }
-    }
-
-    if(this.props.ZoomAllBack != this.ZoomAllBack){
-        let newCXScale = this.newXScaleArray[0]
-        let newCYScale = this.newYScaleArray[0]
-        this.newXScaleArray = [newCXScale]
-        this.newYScaleArray = [newCYScale]
-
-        this.contextXScale = newCXScale
-        this.contextYScale = newCYScale
-        this.ZoomAllBack = !this.ZoomAllBack
-    }
-      this.updateContextView(this.contextXScale, this.contextYScale)
-      this.updateFocusView(this.focusXScale, this.focusYScale)
-    
-
-   
+    this.updateContextView(this.contextXScale, this.contextYScale)
   }
 
   get t() {
@@ -194,21 +131,15 @@ class ThreadChart extends React.Component {
   }
 
   syscallArrowGenerator(d, xScale) {
-    //console.log(d)
     if (d.hasOwnProperty('syscalls') && this.props.showSysCalls) {
       const xOffsets = data => data['syscalls'].map(d => d.execution_offset)
-      //console.log(xOffsets)
       const arrowPoint = xOffsets(d)
-      //console.log(arrowPoint)
-      //const line = d3.line().context(context);
       const context = d3.path()
 
       for (let i = 0; i < arrowPoint.length; i++) {
         context.moveTo(xScale(arrowPoint[i]), 0)
         context.lineTo(xScale(arrowPoint[i]), 4)
       }
-
-      //console.log(context)
 
       return context
     }
@@ -223,7 +154,7 @@ class ThreadChart extends React.Component {
           .attr('transform', d => `translate(0, ${yScale(d.newName) - 2 + yScale.bandwidth() / 4})`)
           .attr('d', d => this.syscallArrowGenerator(d, xScale))
           .attr("marker-end", "url(#arrow)")
-          .style('stroke-width', 0.1)
+          .style('stroke-width', 1)
           .style('stroke', 'red')
           .style('opacity', 0)
           .call(update => update.transition(this.t)
@@ -236,8 +167,6 @@ class ThreadChart extends React.Component {
           .style('opacity', 0)
           .remove()
       )
-
-
   }
 
   create() {
@@ -295,23 +224,7 @@ class ThreadChart extends React.Component {
       .call(brush)
 
     function brushended({ selection }) {
-      if (!selection) {
-        const xDomain = this.focus || this.focusXScale.domain()
-        const yDomain = data.filter(d => d.visible).map(d => d.newName)
-
-        const newXScale = this.focusXScale.copy().domain(xDomain)
-        const newYScale = this.focusYScale.copy().domain(yDomain).range([margin.top, height - focusHeight - margin.bottom])
-
-        this.contextXScale = newXScale
-        this.contextYScale = newYScale
-
-        this.contextViewSelectedArea.select('rect').remove()
-
-        //this.setState({newXScale: [], newYScale: []})
-        console.log("reset")
-
-        this.updateContextView(newXScale, newYScale)
-      } else {
+      if (selection) {
         const newXDomain = [selection[0][0], selection[1][0]].map(this.contextXScale.invert)
         const newThreads = this.contextYScale.domain().slice(...[selection[0][1], selection[1][1]].map(d => Math.round(d / this.contextYScale.step())))
         const newYDomain = data.filter(d => newThreads.includes(d.newName) &&
@@ -322,25 +235,6 @@ class ThreadChart extends React.Component {
 
         const newXScale = this.contextXScale.copy().domain(newXDomain)
         const newYScale = this.contextYScale.copy().domain(newYDomain)
-
-        // this.contextXScale = newXScale
-        // this.contextYScale = newYScale
-
-        // let newXarray =  this.state.newXScale.slice()
-        // let newYarray =  this.state.newYScale.slice()
-
-        // newXarray.push(this.contextXScale)
-        // newYarray.push(this.contextYScale)
-
-        // // this.state.newXScale.push(this.contextXScale)
-        // // this.state.newYScale.push(this.contextYScale)
-
-        // this.setState({newXScale: newXarray, newYScale:newYarray})
-        
-        // console.log(this.state.newXScale)
-
-      
-        contextBrushGroup.call(brush.clear)
 
         // check if the selected area has any thread slice
         // if no, do nothing
@@ -359,13 +253,11 @@ class ThreadChart extends React.Component {
           this.contextXScale = newXScale
           this.contextYScale = newYScale
 
+          contextBrushGroup.call(brush.clear)
 
-          this.newXScaleArray.push(this.contextXScale)
-          this.newYScaleArray.push(this.contextYScale)
-          
-          //this.setState({newXScale: newXarray, newYScale:newYarray})
-          console.log("pushed")
-          console.log(this.newXScaleArray)
+          this.XHistory.push(this.contextXScale)
+          this.YHistory.push(this.contextYScale)
+
           this.updateContextView(this.contextXScale, this.contextYScale)
         }
       }
@@ -396,8 +288,7 @@ class ThreadChart extends React.Component {
 
       this.contextXScale = newContextXScale
 
-
-      this.updateContextView(newContextXScale, this.contextYScale)
+      this.updateContextView(this.contextXScale, this.contextYScale)
     }
 
     const brush = d3.brushX()
@@ -416,6 +307,9 @@ class ThreadChart extends React.Component {
     this.contextYAxis.call(g => g.select('.domain').remove())
       .call(g => g.selectAll('text').style('font-size', '1.4em'))
 
+    console.log(this.XHistory)
+    console.log(this.YHistory)
+
     // grid lines
     this.drawGridLines(this.contextGridLineGroup, newYScale)
 
@@ -425,8 +319,28 @@ class ThreadChart extends React.Component {
     this.drawSystemCalls(this.systemCallGroup, newXScale, newYScale)
   }
 
-  updateFocusView(newXScale, newYScale) {
-    this.drawThreadSlices(this.focusSliceGroup, newXScale, newYScale, 5)
+  handleZoomOutClick() {
+
+    if (this.XHistory.length >= 2) {
+      this.XHistory.pop()
+      this.YHistory.pop()
+    }
+
+    this.contextXScale = this.XHistory[this.XHistory.length-1]
+    this.contextYScale = this.YHistory[this.YHistory.length-1]
+
+    this.updateContextView(this.contextXScale, this.contextYScale)
+  }
+
+  handleResetClick() {
+
+    this.contextXScale = this.XHistory[0]
+    this.contextYScale = this.YHistory[0]
+
+    this.XHistory = [this.contextXScale];
+    this.YHistory = [this.contextYScale];
+
+    this.updateContextView(this.contextXScale, this.contextYScale)
   }
 
   render() {
@@ -434,20 +348,25 @@ class ThreadChart extends React.Component {
       return <h1>Error Connecting to Database</h1>
     }
     return (
-      <article className='thread-chart'>
-        <svg
-          className='thread-chart__context-view'
-          ref={el => this.contextView = el}
-          width={this.props.width}
-          height={this.props.height - 100}>
-        </svg>
-        <svg
-          className='thread-chart__focus-view'
-          ref={el => this.focusView = el}
-          width={this.props.width}
-          height='100'>
-        </svg>
-      </article>
+      <div>
+        <article className='thread-chart'>
+          <svg
+            className='thread-chart__context-view'
+            ref={el => this.contextView = el}
+            width={this.props.width}
+            height={this.props.height - 100}>
+          </svg>
+          <svg
+            className='thread-chart__focus-view'
+            ref={el => this.focusView = el}
+            width={this.props.width}
+            height='100'>
+          </svg>
+        </article>
+        <button onClick={this.handleZoomOutClick}>zoom out</button>
+        &nbsp;
+        <button onClick={this.handleResetClick}>reset</button>
+      </div>
     )
   }
 }

@@ -6,16 +6,12 @@ class App extends React.Component {
     this.updateShowSysCalls = showSysCalls => this.setState({ showSysCalls })
     this.databaseFail = () => this.setState({ databaseError: true })
     this.resetDatabase = () => this.setState({ databaseError: false })
-    this.letZoomBackOnce = ZoomBackOnce => this.setState({ ZoomBackOnce })
-    this.letZoomAllBack = ZoomAllBack => this.setState({ ZoomAllBack })
 
     this.state = {
       threads: [],
       syscall: [],
       showSysCalls: false,
       isLoading: true,
-      ZoomBackOnce: true,
-      ZoomAllBack: true,
       updateThreads: this.updateThreads,
       updateShowSysCalls: this.updateShowSysCalls,
       getSyscalls: this.getSyscalls.bind(this),
@@ -82,15 +78,12 @@ class App extends React.Component {
   
   render() {
     return (
-      // <ThreadListContext.Provider value={this.state}>
       <React.Fragment>
         <Header
           getSyscalls={this.state.getSyscalls}
           updateShowSysCalls={this.updateShowSysCalls}
           databaseFail={this.databaseFail}
           resetDatabase={this.resetDatabase}
-          letZoomBackOnce={this.letZoomBackOnce}
-          letZoomAllBack={this.letZoomAllBack}
         />
         <div className="container">
           {!this.state.isLoading &&
@@ -104,8 +97,6 @@ class App extends React.Component {
                 data={this.state.threads}
                 height={this.state.threads.length * 30 + 100}
                 showSysCalls={this.state.showSysCalls}
-                ZoomBackOnce={this.state.ZoomBackOnce}
-                ZoomAllBack={this.state.ZoomAllBack}
                 width={1000}
                 margin={{
                   top: 10,
@@ -117,7 +108,6 @@ class App extends React.Component {
             </main>}
         </div>
       </React.Fragment>
-      // </ThreadListContext.Provider >
     )
   }
 }
