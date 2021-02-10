@@ -62,7 +62,7 @@ class Sidebar extends React.Component {
           <input className="search-box form-control" type="search" placeholder="Search..." onChange={this.handleSearch} value={this.state.keyword} />
         </form>
         <ul className="thread-list list-group list-group-flush">
-          {this.props.data.filter(thread => thread.newName.includes(this.state.keyword)).map(thread =>
+          {this.props.data.filter(thread => this.props.zoomedThreads.includes(thread.newName)).filter(thread => thread.newName.includes(this.state.keyword)).map(thread =>
             <li key={thread.thread_id} className="list-group-item list-group-item-action d-flex w-100 justify-content-between" onClick={(event) => this.handleCheck(event, thread.thread_id)}>
               <span>{thread.newName}</span>
               <input type="checkbox" checked={thread.visible} />

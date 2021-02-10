@@ -33,7 +33,7 @@ class ThreadChart extends React.Component {
       xscale: this.contextXScale,
       yscale: this.contextYScale,
       xdomain: this.contextXDomain,
-      ydomain: this.contextydomain
+      ydomain: this.contextYDomain
     }]
 
     this.contextXAxis = contextView.append('g')
@@ -64,18 +64,11 @@ class ThreadChart extends React.Component {
   componentDidUpdate() {
     const { data } = this.props
 
-    const newYDomain = data.filter(d => d.visible).map(d => d.newName)
+    const newYDomain = data.filter(thread => this.props.zoomedThreads.includes(thread.newName)).filter(d => d.visible).map(d => d.newName)
     const newYScale = this.contextYScale.copy().domain(newYDomain);
 
     this.contextYDomain = newYDomain;
     this.contextYScale = newYScale;
-
-    this.history.push({
-      xscale: this.history[this.history.length-1].xscale,
-      yscale: newYScale,
-      xdomain: this.history[this.history.length-1].xdomain,
-      ydomain: newYDomain
-    })
 
     this.updateContextView(this.contextXScale, newYScale)
   }
@@ -270,6 +263,8 @@ class ThreadChart extends React.Component {
             ydomain: newYDomain
           })
 
+          this.props.onZoom(newYDomain)
+
           contextBrushGroup.call(brush.clear)
 
           this.updateContextView(this.contextXScale, this.contextYScale)
@@ -345,7 +340,7 @@ class ThreadChart extends React.Component {
         .style('stroke', 'red')
         .style('stroke-width', 1)
         .style('fill', 'none')
-    }   
+    }
   }
 
   handleZoomOutClick() {
@@ -356,10 +351,14 @@ class ThreadChart extends React.Component {
 
     const last = this.history[this.history.length - 1]
 
+    // console.log(this.history)
+    // console.log(last.ydomain, last.yscale.domain(), this.contextYScale.domain())
     this.contextXDomain = last.xdomain
     this.contextYDomain = last.ydomain
     this.contextXScale = last.xscale
     this.contextYScale = last.yscale
+
+    this.props.onZoom(last.ydomain)
 
     this.updateContextView(this.contextXScale, this.contextYScale)
   }
@@ -373,6 +372,7 @@ class ThreadChart extends React.Component {
     this.contextYDomain = original.ydomain
 
     this.history = [original];
+    this.props.onZoom(original.ydomain)
 
     this.updateContextView(this.contextXScale, this.contextYScale)
   }
