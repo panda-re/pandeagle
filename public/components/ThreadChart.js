@@ -7,10 +7,17 @@
 class ThreadChart extends React.Component {
   constructor(props) {
     super(props)
+
+    this.state = {
+      // ZoomBackOnce: true,
+      // ZoomAllBack: true,
+      // newXScale: [],
+      // newYScale: []
+    }
   }
 
   componentDidMount() {
-    const { data, width, height, margin } = this.props
+    const { data, width, height, margin , ZoomBackOnce, ZoomAllBack} = this.props
     const focusHeight = 100
     const maxTime = Math.max(...data.map(t => Math.max(...t.thread_slices.map(d => d.end_execution_offset))))
     const minTime = Math.min(...data.map(t => Math.min(...t.thread_slices.map(d => d.start_execution_offset))))
@@ -27,7 +34,10 @@ class ThreadChart extends React.Component {
     this.focusYScale = this.contextYScale.copy().range([margin.top, focusHeight - margin.bottom])
 
     this.focus = null
-    this.lastContextYIndexOffset = 0
+    this.ZoomAllBack = this.props.ZoomAllBack
+    this.ZoomBackOnce = this.props.ZoomBackOnce
+    this.newXScaleArray = [this.contextXScale]
+    this.newYScaleArray = [this.contextYScale]
 
     this.contextXAxis = contextView.append('g')
       .attr('class', 'thread-chart__context-view__x-axis')
@@ -48,6 +58,8 @@ class ThreadChart extends React.Component {
       .attr('transform', `translate(0, ${focusHeight - margin.bottom})`)
     this.focusSliceGroup = focusView.append('g')
       .attr('class', 'thread-chart__focus-view__slice-group')
+    this.contextViewSelectedArea = focusView.append('g')
+      .attr('class', 'thread-chart__focus-view__context-view-selected-area')
 
     this.create()
   }
@@ -59,9 +71,57 @@ class ThreadChart extends React.Component {
 
     const newContextYDomain = data.filter(d => d.visible).map(d => d.newName)
     this.contextYScale.domain(newContextYDomain)
+    //ZOOM BACK ONCE UPDATE
+    console.log("props: " + this.props.ZoomBackOnce + "  state: " + this.ZoomBackOnce )
+    if (this.props.ZoomBackOnce != this.ZoomBackOnce){
+      if(this.newXScaleArray.length > 2 ){
+        console.log("prepare unzoom")
+        // let xScaleArray = this.state.newXScale.pop()
+        // let yScaleArray = this.state.newYScale.pop()
+        // let newCXScale = xScaleArray.pop()
+        // let newCYScale = yScaleArray.pop()
 
-    this.updateContextView(this.contextXScale, this.contextYScale)
-    this.updateFocusView(this.focusXScale, this.focusYScale)
+        this.newXScaleArray.pop()
+        this.newYScaleArray.pop()
+
+        let newCXScale = this.newXScaleArray[this.newXScaleArray.length-1]
+        let newCYScale = this.newYScaleArray[this.newYScaleArray.length-1]
+        console.log("poped " +newCXScale)
+
+        this.contextXScale = newCXScale
+        this.contextYScale = newCYScale
+        //this.updateContextView(newCXScale,newCYScale)
+        console.log("finished update")
+        this.ZoomBackOnce = !this.ZoomBackOnce
+        //this.setState({newXScale:xScaleArray, newYScale:yScaleArray})
+        //this.setState({ZoomBackOnce:this.props.ZoomBackOnce})
+        //console.log("set State")
+        //TODO: ADD UPDATE ON FOCUS VIEW
+      }else {
+        let newCXScale = this.newXScaleArray[0]
+        let newCYScale = this.newYScaleArray[0]
+
+        this.contextXScale = newCXScale
+        this.contextYScale = newCYScale
+        this.ZoomBackOnce = !this.ZoomBackOnce
+      }
+    }
+
+    if(this.props.ZoomAllBack != this.ZoomAllBack){
+        let newCXScale = this.newXScaleArray[0]
+        let newCYScale = this.newYScaleArray[0]
+        this.newXScaleArray = [newCXScale]
+        this.newYScaleArray = [newCYScale]
+
+        this.contextXScale = newCXScale
+        this.contextYScale = newCYScale
+        this.ZoomAllBack = !this.ZoomAllBack
+    }
+      this.updateContextView(this.contextXScale, this.contextYScale)
+      this.updateFocusView(this.focusXScale, this.focusYScale)
+    
+
+   
   }
 
   get t() {
@@ -236,34 +296,76 @@ class ThreadChart extends React.Component {
 
     function brushended({ selection }) {
       if (!selection) {
-        const newXScale = this.contextXScale.copy().domain(this.focus || this.focusXScale.domain())
-        const newYScale = this.focusYScale.copy().range([margin.top, height - focusHeight - margin.bottom])
+        const xDomain = this.focus || this.focusXScale.domain()
+        const yDomain = data.filter(d => d.visible).map(d => d.newName)
+
+        const newXScale = this.focusXScale.copy().domain(xDomain)
+        const newYScale = this.focusYScale.copy().domain(yDomain).range([margin.top, height - focusHeight - margin.bottom])
 
         this.contextXScale = newXScale
         this.contextYScale = newYScale
-        this.lastContextYIndexOffset = 0
+
+        this.contextViewSelectedArea.select('rect').remove()
+
+        //this.setState({newXScale: [], newYScale: []})
+        console.log("reset")
 
         this.updateContextView(newXScale, newYScale)
       } else {
-        const newXScale = this.contextXScale.copy().domain(this.focus || this.focusXScale.domain())
-        const newYScale = this.contextYScale.copy()
-        const newXDomain = [selection[0][0], selection[1][0]].map(xScale.invert)
-        newXScale.domain(newXDomain)
-        const newYIndices = [selection[0][1], selection[1][1]].map(d => this.lastContextYIndexOffset + Math.round(d / newYScale.step()))
-        const newYDomain = data.slice(...newYIndices)
-          .filter(d => d.thread_slices.some(d => d.start_execution_offset >= newXDomain[0] && d.end_execution_offset <= newXDomain[1]))
+        const newXDomain = [selection[0][0], selection[1][0]].map(this.contextXScale.invert)
+        const newThreads = this.contextYScale.domain().slice(...[selection[0][1], selection[1][1]].map(d => Math.round(d / this.contextYScale.step())))
+        const newYDomain = data.filter(d => newThreads.includes(d.newName) &&
+          d.thread_slices.some(d => (newXDomain[0] <= d.start_execution_offset && d.start_execution_offset <= newXDomain[1]) ||
+            (newXDomain[0] <= d.end_execution_offset && d.end_execution_offset <= newXDomain[1]) ||
+            (d.start_execution_offset <= newXDomain[0] && newXDomain[1] <= d.end_execution_offset)))
           .map(d => d.newName)
 
+        const newXScale = this.contextXScale.copy().domain(newXDomain)
+        const newYScale = this.contextYScale.copy().domain(newYDomain)
+
+        // this.contextXScale = newXScale
+        // this.contextYScale = newYScale
+
+        // let newXarray =  this.state.newXScale.slice()
+        // let newYarray =  this.state.newYScale.slice()
+
+        // newXarray.push(this.contextXScale)
+        // newYarray.push(this.contextYScale)
+
+        // // this.state.newXScale.push(this.contextXScale)
+        // // this.state.newYScale.push(this.contextYScale)
+
+        // this.setState({newXScale: newXarray, newYScale:newYarray})
+        
+        // console.log(this.state.newXScale)
+
+      
         contextBrushGroup.call(brush.clear)
 
-        // check if the selected area is empty
+        // check if the selected area has any thread slice
+        // if no, do nothing
         if (newYDomain.length !== 0) {
-          newYScale.domain(newYDomain)
+          const [x1, x2] = newXDomain.map(this.focusXScale)
+          const [y1, y2] = [this.focusYScale(newYDomain[0]), this.focusYScale(newYDomain[newYDomain.length - 1]) + this.focusYScale.step()]
+          this.contextViewSelectedArea.append('rect')
+            .attr('x', x1)
+            .attr('y', y1)
+            .attr('width', x2 - x1)
+            .attr('height', y2 - y1)
+            .style('stroke', 'red')
+            .style('stroke-width', 1)
+            .style('fill', 'none')
 
           this.contextXScale = newXScale
           this.contextYScale = newYScale
-          this.lastContextYIndexOffset = newYIndices[0]
 
+
+          this.newXScaleArray.push(this.contextXScale)
+          this.newYScaleArray.push(this.contextYScale)
+          
+          //this.setState({newXScale: newXarray, newYScale:newYarray})
+          console.log("pushed")
+          console.log(this.newXScaleArray)
           this.updateContextView(this.contextXScale, this.contextYScale)
         }
       }
@@ -293,6 +395,7 @@ class ThreadChart extends React.Component {
       const newContextXScale = xScale.copy().domain(this.focus || xScale.domain())
 
       this.contextXScale = newContextXScale
+
 
       this.updateContextView(newContextXScale, this.contextYScale)
     }
