@@ -3,13 +3,11 @@ class App extends React.Component {
     super(props)
 
     this.updateThreads = threads => this.setState({ threads })
-
     this.updateShowSysCalls = showSysCalls => this.setState({ showSysCalls })
-
+    this.databaseFail = () => this.setState({ databaseError: true })
+    this.resetDatabase = () => this.setState({ databaseError: false })
     this.letZoomBackOnce = ZoomBackOnce => this.setState({ ZoomBackOnce })
-
     this.letZoomAllBack = ZoomAllBack => this.setState({ ZoomAllBack })
-
 
     this.state = {
       threads: [],
@@ -20,13 +18,20 @@ class App extends React.Component {
       ZoomAllBack: true,
       updateThreads: this.updateThreads,
       updateShowSysCalls: this.updateShowSysCalls,
-      getSyscalls: this.getSyscalls.bind(this)
+      getSyscalls: this.getSyscalls.bind(this),
+      databaseError: false,
     }
   }
 
   async componentDidMount() {
     const data = await d3.json('/executions/1/threadslices')
+      .catch((err) => {
+        this.databaseFail()
+        this.setState({ isLoading: false })
+      })
     //const syscall = await d3.json('http://localhost:3000/executions/1/syscalls/')
+
+    if (!data) return
     let threadNames = this.renameDuplicates(data.map(data => data["names"].join(" ")))
 
     for (let i = 0; i < data.length; i++) {
@@ -38,8 +43,9 @@ class App extends React.Component {
     data.sort((a, b) => a.newName.replace(/ *\([^)]*\) */g, '').localeCompare(b.newName.replace(/ *\([^)]*\) */g, '')))
 
     //const result = syscall.map(x => Object.assign(x, data.find(y => y.thread_id == x.thread_id)))
-     //console.log(result)
-     //console.log(data)
+    //console.log(result)
+    //console.log(data)
+
     this.setState({ threads: data, isLoading: false })
   }
 
@@ -66,18 +72,23 @@ class App extends React.Component {
   async getSyscalls() {
     if (!this.state.threads[0].hasOwnProperty('syscalls')) {
       const syscall = await d3.json('/executions/1/syscalls/')
+        .catch((err) => {
+          this.databaseFail()
+        })
       this.setState({ threads: syscall.map(x => Object.assign(x, this.state.threads.find(y => y.thread_id == x.thread_id))) })
     }
-    
-  }
 
+  }
+  
   render() {
     return (
       // <ThreadListContext.Provider value={this.state}>
       <React.Fragment>
-        <Header 
+        <Header
           getSyscalls={this.state.getSyscalls}
           updateShowSysCalls={this.updateShowSysCalls}
+          databaseFail={this.databaseFail}
+          resetDatabase={this.resetDatabase}
           letZoomBackOnce={this.letZoomBackOnce}
           letZoomAllBack={this.letZoomAllBack}
         />
@@ -89,6 +100,7 @@ class App extends React.Component {
           {!this.state.isLoading &&
             <main className="main">
               <ThreadChart
+                databaseError={this.state.databaseError}
                 data={this.state.threads}
                 height={this.state.threads.length * 30 + 100}
                 showSysCalls={this.state.showSysCalls}
@@ -100,9 +112,8 @@ class App extends React.Component {
                   right: 20,
                   bottom: 30,
                   left: 120
-                }} 
-                
-                />
+                }}
+              />
             </main>}
         </div>
       </React.Fragment>

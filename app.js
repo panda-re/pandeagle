@@ -19,9 +19,8 @@ app.get('/executions', (req, res) => {
             res.json(exe.rows);
         })
         .catch((err) => {
-            console.log(err);
-            res.status(400);
-            res.json(err);
+            console.error("ERROR CONNECTING DATABASE");
+            res.status(400).json(err);
         });
 });
 

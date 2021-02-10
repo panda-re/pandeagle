@@ -1,7 +1,20 @@
 const { Pool } = require('pg');
 const fs = require('fs');
 
-const dbConfig = JSON.parse(fs.readFileSync('config.json', 'UTF-8'));
+let dbConfig = {
+    host: "pandeagle.csse.rose-hulman.edu",
+    port: "5432",
+    database: "pandelephant",
+    user: "shenx",
+    password: "123456",
+    ssl: true
+}
+
+try {
+    dbConfig = JSON.parse(fs.readFileSync('config.json'));
+} catch (err) {
+    console.log("No config.json, using default database configuration");   
+}
 
 let pool = new Pool({
     user: dbConfig.user,
@@ -10,10 +23,6 @@ let pool = new Pool({
     password: dbConfig.password,
     port: +dbConfig.port,
     ssl: dbConfig.ssl
-});
-
-pool.on('error', (err, client) => {
-    console.error('Unexpected error on idle client', err);
 });
 
 const conn = {

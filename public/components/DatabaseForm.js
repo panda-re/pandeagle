@@ -4,7 +4,8 @@ class DatabaseForm extends React.Component {
       url: '/saveDBConfig',
       type: 'post',
       data: $('#dbInfo').serialize(),
-      success: function () {
+      success: () => {
+        this.props.resetDatabase();
         location.reload();
       }
     });

@@ -24,11 +24,19 @@ class Header extends React.Component {
   }
 
   fetchExecutions() {
-    d3.json('/executions').then(executions => this.setState({ executions }))
+    d3.json('/executions')
+      .then(executions => this.setState({ executions }))
+      .catch((err) => {
+        this.props.databaseFail()
+      })
   }
 
   fetchThreads() {
-    d3.json('/executions/1/threadslices').then(threads => this.setState({ threads }))
+    d3.json('/executions/1/threadslices')
+      .then(threads => this.setState({ threads }))
+      .catch((err) => {
+        this.props.databaseFail()
+      })
   }
 
   handleSysClick(e) {
@@ -99,7 +107,9 @@ class Header extends React.Component {
             Switch Database
           </button>
         </div>
-        <DatabaseForm />
+        <DatabaseForm
+          resetDatabase={this.props.resetDatabase}
+        />
       </header>
     )
   }

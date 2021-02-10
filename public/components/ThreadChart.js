@@ -430,6 +430,9 @@ class ThreadChart extends React.Component {
   }
 
   render() {
+    if (this.props.databaseError) {
+      return <h1>Error Connecting to Database</h1>
+    }
     return (
       <article className='thread-chart'>
         <svg
