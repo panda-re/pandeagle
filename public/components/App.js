@@ -75,7 +75,7 @@ class App extends React.Component {
         .catch((err) => {
           this.databaseFail()
         })
-      this.setState({ threads: syscall.map(x => Object.assign(x, this.state.threads.find(y => y.thread_id == x.thread_id))) })
+      this.setState({ threads: this.state.threads.map(x => Object.assign(x, syscall.find(y => y.thread_id == x.thread_id))) })
     }
 
   }
