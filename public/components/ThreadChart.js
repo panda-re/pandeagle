@@ -4,6 +4,7 @@ class ThreadChart extends React.Component {
 
     this.handleZoomOutClick = this.handleZoomOutClick.bind(this)
     this.handleResetClick = this.handleResetClick.bind(this)
+    this.drawFocusViewBox = this.drawFocusViewBox.bind(this)
   }
 
   componentDidMount() {
@@ -14,18 +15,26 @@ class ThreadChart extends React.Component {
     const contextView = d3.select(this.contextView)
     const focusView = d3.select(this.focusView)
 
+    this.contextXDomain = [minTime, maxTime];
     this.contextXScale = d3.scaleLinear()
-      .domain([minTime, maxTime])
+      .domain(this.contextXDomain)
       .range([margin.left, width - margin.right])
-    this.focusXScale = this.contextXScale.copy()
+
+    this.contextYDomain = data.map(d => d.newName);
     this.contextYScale = d3.scaleBand()
-      .domain(data.map(d => d.newName))
+      .domain(this.contextYDomain)
       .range([margin.top, height - focusHeight - margin.bottom])
+
+    this.focusXScale = this.contextXScale.copy()
     this.focusYScale = this.contextYScale.copy().range([margin.top, focusHeight - margin.bottom])
 
     this.focus = null
-    this.XHistory = [this.contextXScale]
-    this.YHistory = [this.contextYScale]
+    this.history = [{
+      xscale: this.contextXScale,
+      yscale: this.contextYScale,
+      xdomain: this.contextXDomain,
+      ydomain: this.contextydomain
+    }]
 
     this.contextXAxis = contextView.append('g')
       .attr('class', 'thread-chart__context-view__x-axis')
@@ -55,14 +64,29 @@ class ThreadChart extends React.Component {
   componentDidUpdate() {
     const { data } = this.props
 
-    const newContextYDomain = data.filter(d => d.visible).map(d => d.newName)
-    this.contextYScale.domain(newContextYDomain)
+    const newYDomain = data.filter(d => d.visible).map(d => d.newName)
+    const newYScale = this.contextYScale.copy().domain(newYDomain);
 
-    this.updateContextView(this.contextXScale, this.contextYScale)
+    this.contextYDomain = newYDomain;
+    this.contextYScale = newYScale;
+
+    this.history.push({
+      xscale: this.history[this.history.length-1].xscale,
+      yscale: newYScale,
+      xdomain: this.history[this.history.length-1].xdomain,
+      ydomain: newYDomain
+    })
+
+    this.updateContextView(this.contextXScale, newYScale)
   }
 
   get t() {
     return d3.transition().duration(1000)
+  }
+
+  create() {
+    this.createContextView()
+    this.createFocusView()
   }
 
   drawGridLines(g, yScale) {
@@ -169,11 +193,6 @@ class ThreadChart extends React.Component {
       )
   }
 
-  create() {
-    this.createContextView()
-    this.createFocusView()
-  }
-
   createContextView() {
     const { width, height, margin, data } = this.props
     const focusHeight = 100
@@ -239,24 +258,19 @@ class ThreadChart extends React.Component {
         // check if the selected area has any thread slice
         // if no, do nothing
         if (newYDomain.length !== 0) {
-          const [x1, x2] = newXDomain.map(this.focusXScale)
-          const [y1, y2] = [this.focusYScale(newYDomain[0]), this.focusYScale(newYDomain[newYDomain.length - 1]) + this.focusYScale.step()]
-          this.contextViewSelectedArea.append('rect')
-            .attr('x', x1)
-            .attr('y', y1)
-            .attr('width', x2 - x1)
-            .attr('height', y2 - y1)
-            .style('stroke', 'red')
-            .style('stroke-width', 1)
-            .style('fill', 'none')
-
+          this.contextXDomain = newXDomain;
+          this.contextYDomain = newYDomain;
           this.contextXScale = newXScale
           this.contextYScale = newYScale
 
-          contextBrushGroup.call(brush.clear)
+          this.history.push({
+            xscale: newXScale,
+            yscale: newYScale,
+            xdomain: newXDomain,
+            ydomain: newYDomain
+          })
 
-          this.XHistory.push(this.contextXScale)
-          this.YHistory.push(this.contextYScale)
+          contextBrushGroup.call(brush.clear)
 
           this.updateContextView(this.contextXScale, this.contextYScale)
         }
@@ -307,8 +321,7 @@ class ThreadChart extends React.Component {
     this.contextYAxis.call(g => g.select('.domain').remove())
       .call(g => g.selectAll('text').style('font-size', '1.4em'))
 
-    console.log(this.XHistory)
-    console.log(this.YHistory)
+    this.drawFocusViewBox();
 
     // grid lines
     this.drawGridLines(this.contextGridLineGroup, newYScale)
@@ -319,26 +332,47 @@ class ThreadChart extends React.Component {
     this.drawSystemCalls(this.systemCallGroup, newXScale, newYScale)
   }
 
+  drawFocusViewBox() {
+    this.contextViewSelectedArea.select('rect').remove();
+    if (this.history.length > 1) {
+      const [x1, x2] = this.contextXDomain.map(this.focusXScale)
+      const [y1, y2] = [this.focusYScale(this.contextYDomain[0]), this.focusYScale(this.contextYDomain[this.contextYDomain.length - 1]) + this.focusYScale.step()]
+      this.contextViewSelectedArea.append('rect')
+        .attr('x', x1)
+        .attr('y', y1)
+        .attr('width', x2 - x1)
+        .attr('height', y2 - y1)
+        .style('stroke', 'red')
+        .style('stroke-width', 1)
+        .style('fill', 'none')
+    }   
+  }
+
   handleZoomOutClick() {
 
-    if (this.XHistory.length >= 2) {
-      this.XHistory.pop()
-      this.YHistory.pop()
+    if (this.history.length >= 2) {
+      this.history.pop()
     }
 
-    this.contextXScale = this.XHistory[this.XHistory.length-1]
-    this.contextYScale = this.YHistory[this.YHistory.length-1]
+    const last = this.history[this.history.length - 1]
+
+    this.contextXDomain = last.xdomain
+    this.contextYDomain = last.ydomain
+    this.contextXScale = last.xscale
+    this.contextYScale = last.yscale
 
     this.updateContextView(this.contextXScale, this.contextYScale)
   }
 
   handleResetClick() {
+    const original = this.history[0]
 
-    this.contextXScale = this.XHistory[0]
-    this.contextYScale = this.YHistory[0]
+    this.contextXScale = original.xscale
+    this.contextYScale = original.yscale
+    this.contextXDomain = original.xdomain
+    this.contextYDomain = original.ydomain
 
-    this.XHistory = [this.contextXScale];
-    this.YHistory = [this.contextYScale];
+    this.history = [original];
 
     this.updateContextView(this.contextXScale, this.contextYScale)
   }
