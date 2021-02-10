@@ -9,9 +9,6 @@ class Header extends React.Component {
       ZoomAllBack:false,
       isSyscallOn: true,
       showForm: false
-      
-
-
     }
     this.handleSysClick = this.handleSysClick.bind(this);
     this.handleZoomBackClick = this.handleZoomBackClick.bind(this);
