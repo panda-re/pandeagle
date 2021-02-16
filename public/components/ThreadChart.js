@@ -4,7 +4,6 @@ class ThreadChart extends React.Component {
 
     this.handleZoomOutClick = this.handleZoomOutClick.bind(this)
     this.handleResetClick = this.handleResetClick.bind(this)
-    this.drawFocusViewBox = this.drawFocusViewBox.bind(this)
   }
 
   componentDidMount() {
@@ -147,39 +146,38 @@ class ThreadChart extends React.Component {
       )
   }
 
-  syscallArrowGenerator(d, xScale) {
+  syscallArrowGenerator(d, xScale, length) {
     if (d.hasOwnProperty('syscalls') && this.props.showSysCalls) {
       const xOffsets = data => data['syscalls'].map(d => d.execution_offset)
       const arrowPoint = xOffsets(d)
       const context = d3.path()
 
       for (let i = 0; i < arrowPoint.length; i++) {
-        context.moveTo(xScale(arrowPoint[i]), 0)
-        context.lineTo(xScale(arrowPoint[i]), 4)
+        context.moveTo(xScale(arrowPoint[i]), -length)
+        context.lineTo(xScale(arrowPoint[i]), 0)
       }
 
       return context
     }
   }
 
-  drawSystemCalls(g, xScale, yScale) {
+  drawSystemCalls(g, xScale, yScale, strokeWidth = 10, length = 10) {
     g.selectAll('path')
       .data(this.props.data.filter(d => d.visible), d => d.newName)
       .join(
         enter => enter.append('path')
           .attr('class', 'thread-chart__context-view__system-call-group__arrow')
-          .attr('transform', d => `translate(0, ${yScale(d.newName) - 2 + yScale.bandwidth() / 4})`)
-          .attr('d', d => this.syscallArrowGenerator(d, xScale))
-          .attr("marker-end", "url(#arrow)")
-          .style('stroke-width', 1)
-          .style('stroke', 'red')
+          .attr('transform', d => `translate(0, ${yScale(d.newName) + yScale.bandwidth() / 2 - strokeWidth / 2})`)
+          .attr('d', d => this.syscallArrowGenerator(d, xScale, length))
+          .style('stroke-width', 1) // FIXME: the width of the system call arrwos is currently hard-coded as 1
+          .style('stroke', '#FF6347')
           .style('opacity', 0)
           .call(update => update.transition(this.t)
             .style('opacity', 1)),
         update => update
-          .attr('d', d => this.syscallArrowGenerator(d, xScale))
+          .attr('d', d => this.syscallArrowGenerator(d, xScale, length))
           .call(update => update.transition(this.t)
-            .attr('transform', d => `translate(0, ${yScale(d.newName) - 2 + yScale.bandwidth() / 4})`)),
+            .attr('transform', d => `translate(0, ${yScale(d.newName) + yScale.bandwidth() / 2 - strokeWidth / 2})`)),
         exit => exit.transition(this.t)
           .style('opacity', 0)
           .remove()
