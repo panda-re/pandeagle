@@ -163,10 +163,15 @@ class ThreadChart extends React.Component {
       this.props.data.filter(d => yScale.domain().includes(d.newName))
     )
     const showSysCall = d => {
+      // check if it is within the domain of x scale
+      const [minOffset, maxOffset] = xScale.domain()
+      if (!(minOffset <= d.execution_offset && d.execution_offset <= maxOffset)) {
+        return false
+      }
       // check if there is enough room to display the name of this system call
       const left = xScale(d.execution_offset) - (d.prev ? xScale(d.prev.execution_offset) : 0)
       const right = (d.next ? xScale(d.next.execution_offset) : xScale.range()[1]) - xScale(d.execution_offset)
-      return (left >= 80 && right >= 80) ? 1 : 0
+      return (left >= 80 && right >= 80)
     }
     g.selectAll('g')
       .data(data, d => d.newName)
@@ -191,7 +196,10 @@ class ThreadChart extends React.Component {
           .style('opacity', 0)
           .remove())
       .selectAll('text')
-      .data(d => d.syscalls.map((x, i) => ({ ...x, prev: d.syscalls[i - 1], next: d.syscalls[i + 1] })), d => d.name)
+      .data(d => d.syscalls
+        .map((x, i) => ({ ...x, prev: d.syscalls[i - 1], next: d.syscalls[i + 1] }))
+        .filter(showSysCall),
+        d => d.name)
       .join(
         enter => enter.append('text')
           .attr('class', 'thread-chart__context-view__system-call__system-call-group__system-call-name')
@@ -204,13 +212,10 @@ class ThreadChart extends React.Component {
           .text(d => d.name)
           .style('opacity', 0)
           .call(enter => enter.transition(this.t)
-            .style('opacity', showSysCall)),
+            .style('opacity', 1)),
         update => update
           .call(update => update.transition(this.t)
-            .attr('x', d => xScale(d.execution_offset))
-            .attr('y', -(threadSliceHeight / 2 + length))
-            .style('opacity', showSysCall)
-            .text(d => d.name)),
+            .attr('x', d => xScale(d.execution_offset))),
         exit => exit.transition(this.t)
           .style('opacity', 0)
           .remove()
