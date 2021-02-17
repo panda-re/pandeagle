@@ -61,9 +61,10 @@ class ThreadChart extends React.Component {
   }
 
   componentDidUpdate() {
+    console.log('componentdidupdate')
     const { data } = this.props
 
-    const newYDomain = data.filter(thread => this.props.zoomedThreads.includes(thread.newName)).filter(d => d.visible).map(d => d.newName)
+    const newYDomain = data.filter(d => this.props.zoomedThreads.includes(d.newName)).filter(d => d.visible).map(d => d.newName)
     const newYScale = this.contextYScale.copy().domain(newYDomain);
 
     this.contextYDomain = newYDomain;
@@ -95,8 +96,7 @@ class ThreadChart extends React.Component {
           .style('stroke', '#272727')
           .style('opacity', 0)
           .call(enter => enter.transition(this.t)
-            .style('opacity', .2)
-          ),
+            .style('opacity', .2)),
         update => update.call(update => update.transition(this.t)
           .attr('transform', d => `translate(0,${yScale(d) + yScale.bandwidth() / 2})`)),
         exit => exit.transition(this.t)
@@ -106,7 +106,7 @@ class ThreadChart extends React.Component {
 
   }
 
-  sliceGenerator(d, xScale) {
+  sliceGenerator(d, xScale, height) {
     const startAccessor = data => data['thread_slices'].map(d => d.start_execution_offset)
     const endAccessor = data => data['thread_slices'].map(d => d.end_execution_offset)
 
@@ -114,70 +114,72 @@ class ThreadChart extends React.Component {
     const endPoints = endAccessor(d)
 
     const context = d3.path()
-
     for (let i = 0; i < startPoints.length; i++) {
-      context.moveTo(xScale(startPoints[i]), 0)
-      context.lineTo(xScale(endPoints[i]), 0)
+      const [x, y, w, h] = [xScale(startPoints[i]), -height / 2, xScale(endPoints[i]) - xScale(startPoints[i]), height]
+      context.rect(x, y, w, h)
     }
 
     return context
   }
 
-  drawThreadSlices(g, xScale, yScale, strokeWidth = 10) {
+  drawThreadSlices(g, xScale, yScale, height) {
+    const data = this.props.data.filter(d => yScale.domain().includes(d.newName)) // hide threads not in the current zoom area
     g.selectAll('path')
-      .data(this.props.data.filter(d => d.visible), d => d.newName)
+      .data(data, d => d.newName)
       .join(
         enter => enter.append('path')
           .attr('class', 'thread-chart__slice-group__slice')
           .attr('transform', d => `translate(0, ${yScale(d.newName) + yScale.bandwidth() / 2})`)
-          .attr('d', d => this.sliceGenerator(d, xScale))
-          .style('stroke-width', strokeWidth)
-          .style('stroke', '#4A89DC')
+          .attr('d', d => this.sliceGenerator(d, xScale, height))
+          .style('fill', '#4A89DC')
           .style('opacity', 0)
-          .call(update => update.transition(this.t)
+          .call(enter => enter.transition(this.t)
             .style('opacity', 1)),
-        update => update
-          .attr('d', d => this.sliceGenerator(d, xScale))
-          .call(update => update.transition(this.t)
-            .attr('transform', d => `translate(0, ${yScale(d.newName) + yScale.bandwidth() / 2})`)),
+        update => update.transition(this.t)
+          .attr('d', d => this.sliceGenerator(d, xScale, height))
+          .attr('transform', d => `translate(0, ${yScale(d.newName) + yScale.bandwidth() / 2})`)
+          .selection(),
         exit => exit.transition(this.t)
           .style('opacity', 0)
           .remove()
       )
   }
 
-  syscallArrowGenerator(d, xScale, length) {
-    if (d.hasOwnProperty('syscalls') && this.props.showSysCalls) {
-      const xOffsets = data => data['syscalls'].map(d => d.execution_offset)
-      const arrowPoint = xOffsets(d)
-      const context = d3.path()
+  syscallArrowGenerator(d, xScale, threadSliceHeight, length) {
+    const xOffsets = data => data['syscalls'].map(d => d.execution_offset)
+    const arrowPoint = xOffsets(d)
+    const context = d3.path()
 
-      for (let i = 0; i < arrowPoint.length; i++) {
-        context.moveTo(xScale(arrowPoint[i]), -length)
-        context.lineTo(xScale(arrowPoint[i]), 0)
-      }
-
-      return context
+    for (let i = 0; i < arrowPoint.length; i++) {
+      context.moveTo(xScale(arrowPoint[i]), -(threadSliceHeight / 2 + length))
+      context.lineTo(xScale(arrowPoint[i]), -threadSliceHeight / 2)
     }
+
+    return context
   }
 
-  drawSystemCalls(g, xScale, yScale, strokeWidth = 10, length = 10) {
+  drawSystemCalls(g, xScale, yScale, threadSliceHeight, length) {
+    const data = (!this.props.showSysCalls ?
+      [] :
+      this.props.data.filter(d => yScale.domain().includes(d.newName))
+    )
     g.selectAll('path')
-      .data(this.props.data.filter(d => d.visible), d => d.newName)
+      .data(data, d => d.newName)
       .join(
         enter => enter.append('path')
           .attr('class', 'thread-chart__context-view__system-call-group__arrow')
-          .attr('transform', d => `translate(0, ${yScale(d.newName) + yScale.bandwidth() / 2 - strokeWidth / 2})`)
-          .attr('d', d => this.syscallArrowGenerator(d, xScale, length))
+          .attr('transform', d => `translate(0, ${yScale(d.newName) + yScale.bandwidth() / 2})`)
+          .attr('d', d => this.syscallArrowGenerator(d, xScale, threadSliceHeight, length))
           .style('stroke-width', 1) // FIXME: the width of the system call arrwos is currently hard-coded as 1
           .style('stroke', '#FF6347')
           .style('opacity', 0)
-          .call(update => update.transition(this.t)
-            .style('opacity', 1)),
-        update => update
-          .attr('d', d => this.syscallArrowGenerator(d, xScale, length))
-          .call(update => update.transition(this.t)
-            .attr('transform', d => `translate(0, ${yScale(d.newName) + yScale.bandwidth() / 2 - strokeWidth / 2})`)),
+          .call(enter => enter.transition(this.t)
+            .style('opacity', 1)
+          ),
+        update => update.transition(this.t)
+          .attr('d', d => this.syscallArrowGenerator(d, xScale, threadSliceHeight, length))
+          .attr('transform', d => `translate(0, ${yScale(d.newName) + yScale.bandwidth() / 2})`)
+          .selection(),
         exit => exit.transition(this.t)
           .style('opacity', 0)
           .remove()
@@ -204,18 +206,19 @@ class ThreadChart extends React.Component {
     const xAxis = d3.axisBottom(xScale)
     this.contextXAxis.call(xAxis)
 
+    // calculate the new height of thread slices and the new length of system call arrows
+    const { threadSliceHeight, systemCallArrowLength } = this.getContextViewElementHeights(yScale)
+
     // grid line
     this.drawGridLines(this.contextGridLineGroup, yScale)
 
     // thread slices
+    this.drawThreadSlices(this.contextSliceGroup, xScale, yScale, threadSliceHeight)
 
-    this.drawThreadSlices(this.contextSliceGroup, xScale, yScale)
+    // system calls
+    this.drawSystemCalls(this.systemCallGroup, xScale, yScale, threadSliceHeight, systemCallArrowLength)
 
-    //system calls
-    this.drawSystemCalls(this.systemCallGroup, xScale, yScale)
-    //
-
-    // clipping path (prevents data overflow on x axis)
+    // clipping path (prevent chart from oozing out of bounds)
     contextView.append('clipPath')
       .attr('id', 'clip')
       .append('rect')
@@ -264,8 +267,6 @@ class ThreadChart extends React.Component {
           this.props.onZoom(newYDomain)
 
           contextBrushGroup.call(brush.clear)
-
-          this.updateContextView(this.contextXScale, this.contextYScale)
         }
       }
     }
@@ -295,7 +296,7 @@ class ThreadChart extends React.Component {
 
       this.contextXScale = newContextXScale
 
-      this.updateContextView(this.contextXScale, this.contextYScale)
+      this.updateContextView(this.contextXScale, this.contextYScale) // FIXME:  UpdateContextView should only be called by React
     }
 
     const brush = d3.brushX()
@@ -307,6 +308,13 @@ class ThreadChart extends React.Component {
       .call(brush)
   }
 
+  getContextViewElementHeights(yScale) {
+    const bandwidth = yScale.bandwidth()
+    const threadSliceHeight = bandwidth / 3
+    const systemCallArrowLength = threadSliceHeight / 2
+    return { threadSliceHeight, systemCallArrowLength }
+  }
+
   updateContextView(newXScale, newYScale) {
     // x- and y- axis
     this.contextXAxis.transition(this.t).call(d3.axisBottom(newXScale))
@@ -314,15 +322,20 @@ class ThreadChart extends React.Component {
     this.contextYAxis.call(g => g.select('.domain').remove())
       .call(g => g.selectAll('text').style('font-size', '1.4em'))
 
+    // calculate the new height of thread slices and the new length of system call arrows
+    const { threadSliceHeight: newStrokeWidth, systemCallArrowLength: newLength } = this.getContextViewElementHeights(newYScale)
+
+    // zoom box
     this.drawFocusViewBox();
 
     // grid lines
     this.drawGridLines(this.contextGridLineGroup, newYScale)
 
     // thread slices
-    this.drawThreadSlices(this.contextSliceGroup, newXScale, newYScale)
-    //sys calls
-    this.drawSystemCalls(this.systemCallGroup, newXScale, newYScale)
+    this.drawThreadSlices(this.contextSliceGroup, newXScale, newYScale, newStrokeWidth)
+
+    // system calls
+    this.drawSystemCalls(this.systemCallGroup, newXScale, newYScale, newStrokeWidth, newLength)
   }
 
   drawFocusViewBox() {
@@ -357,8 +370,6 @@ class ThreadChart extends React.Component {
     this.contextYScale = last.yscale
 
     this.props.onZoom(last.ydomain)
-
-    this.updateContextView(this.contextXScale, this.contextYScale)
   }
 
   handleResetClick() {
@@ -371,8 +382,6 @@ class ThreadChart extends React.Component {
 
     this.history = [original];
     this.props.onZoom(original.ydomain)
-
-    this.updateContextView(this.contextXScale, this.contextYScale)
   }
 
   render() {

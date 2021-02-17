@@ -3,11 +3,11 @@ class App extends React.Component {
     super(props)
 
     this.updateThreads = threads => this.setState({ threads })
-    this.updateShowSysCalls = showSysCalls => this.setState({ showSysCalls })
     this.databaseFail = () => this.setState({ databaseError: true })
     this.resetDatabase = () => this.setState({ databaseError: false })
 
     this.handleZoom = this.handleZoom.bind(this)
+    this.handleToggleSysCalls = this.handleToggleSysCalls.bind(this)
 
     this.state = {
       threads: [],
@@ -16,8 +16,6 @@ class App extends React.Component {
       showSysCalls: false,
       isLoading: true,
       updateThreads: this.updateThreads,
-      updateShowSysCalls: this.updateShowSysCalls,
-      getSyscalls: this.getSyscalls.bind(this),
       databaseError: false,
     }
   }
@@ -72,7 +70,12 @@ class App extends React.Component {
     return newNames
   }
 
-  async getSyscalls() {
+  async handleToggleSysCalls() {
+    await this.fetchSysCalls()
+    this.setState(prevState => ({ showSysCalls: !prevState.showSysCalls }))
+  }
+
+  async fetchSysCalls() {
     if (!this.state.threads[0].hasOwnProperty('syscalls')) {
       const syscall = await d3.json('/executions/1/syscalls/')
         .catch((err) => {
@@ -91,8 +94,8 @@ class App extends React.Component {
     return (
       <React.Fragment>
         <Header
-          getSyscalls={this.state.getSyscalls}
-          updateShowSysCalls={this.updateShowSysCalls}
+          showSysCalls={this.state.showSysCalls}
+          onToggleSysCalls={this.handleToggleSysCalls}
           databaseFail={this.databaseFail}
           resetDatabase={this.resetDatabase}
         />
