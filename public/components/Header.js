@@ -8,7 +8,8 @@ class Header extends React.Component {
       isSyscallOn: true,
       showForm: false
     }
-    this.handleSysClick = this.handleSysClick.bind(this);
+
+    this.handleClick = this.handleClick.bind(this)
   }
 
   componentDidMount() {
@@ -32,18 +33,10 @@ class Header extends React.Component {
       })
   }
 
-  handleSysClick(e) {
+  handleClick(e) {
     e.preventDefault()
 
-    this.props.getSyscalls()
-    this.setState(prevState => ({
-      isSyscallOn: !prevState.isSyscallOn
-    }));
-    this.props.updateShowSysCalls(this.state.isSyscallOn)
-  }
-
-  toggleForm = () => {
-    showForm = !showForm;
+    this.props.onToggleSysCalls()
   }
 
   render() {
@@ -67,8 +60,8 @@ class Header extends React.Component {
           <a className="navbar-brand" href="#">
             System Call
           </a>
-          <button onClick={this.handleSysClick}>
-            {this.state.isSyscallOn ? 'ON' : 'OFF'}
+          <button onClick={this.handleClick}>
+            {!this.props.showSysCalls ? 'ON' : 'OFF'}
           </button>
         </form>
 
