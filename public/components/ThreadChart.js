@@ -171,8 +171,10 @@ class ThreadChart extends React.Component {
       // check if there is enough room to display the name of this system call
       const left = xScale(d.execution_offset) - (d.prev ? xScale(d.prev.execution_offset) : 0)
       const right = (d.next ? xScale(d.next.execution_offset) : xScale.range()[1]) - xScale(d.execution_offset)
-      return (left >= 80 && right >= 80)
+      return (left >= 40 && right >= 40)
     }
+    const tooltip = d3.select(this.tooltip);
+    console.log(tooltip)
     g.selectAll('g')
       .data(data, d => d.newName)
       .join(
@@ -207,12 +209,21 @@ class ThreadChart extends React.Component {
           .attr('y', -(threadSliceHeight / 2 + length))
           .attr('dy', '-.4em')
           .attr('text-anchor', 'middle')
-          .style('font-size', 2)
+          .style('font-size', 12)
           .style('fill', '#808080')
           .text(d => d.name)
           .style('opacity', 0)
           .call(enter => enter.transition(this.t)
-            .style('opacity', 1)),
+            .style('opacity', 1))
+          .on("mouseover", function (d) {
+            tooltip.style("opacity", .9);
+            tooltip.html("????")
+              .style("left", d.clientX + "px")
+              .style("top", d.clientY + "px");
+          })
+          .on("mouseout", function (d) {
+            tooltip.style("opacity", 0);
+          }),
         update => update
           .call(update => update.transition(this.t)
             .attr('x', d => xScale(d.execution_offset))),
@@ -263,50 +274,6 @@ class ThreadChart extends React.Component {
       .attr('y', margin.top)
       .attr('height', height - focusHeight)
       .attr('width', width - margin.left - margin.right)
-
-    // brush
-    const brush = d3.brush()
-      .extent([[margin.left, 0.5], [width - margin.right, contextHeight - margin.bottom + 0.5]])
-      .on('end', brushended.bind(this))
-
-    const contextBrushGroup = contextView.append('g')
-      .attr('class', 'thread-chart__context-view__brush')
-      .call(brush)
-
-    function brushended({ selection }) {
-      if (selection) {
-        const newXDomain = [selection[0][0], selection[1][0]].map(this.contextXScale.invert)
-        const newThreads = this.contextYScale.domain().slice(...[selection[0][1], selection[1][1]].map(d => Math.round(d / this.contextYScale.step())))
-        const newYDomain = data.filter(d => newThreads.includes(d.newName) &&
-          d.thread_slices.some(d => (newXDomain[0] <= d.start_execution_offset && d.start_execution_offset <= newXDomain[1]) ||
-            (newXDomain[0] <= d.end_execution_offset && d.end_execution_offset <= newXDomain[1]) ||
-            (d.start_execution_offset <= newXDomain[0] && newXDomain[1] <= d.end_execution_offset)))
-          .map(d => d.newName)
-
-        const newXScale = this.contextXScale.copy().domain(newXDomain)
-        const newYScale = this.contextYScale.copy().domain(newYDomain)
-
-        // check if the selected area has any thread slice
-        // if no, do nothing
-        if (newYDomain.length !== 0) {
-          this.contextXDomain = newXDomain;
-          this.contextYDomain = newYDomain;
-          this.contextXScale = newXScale
-          this.contextYScale = newYScale
-
-          this.history.push({
-            xscale: newXScale,
-            yscale: newYScale,
-            xdomain: newXDomain,
-            ydomain: newYDomain
-          })
-
-          this.props.onZoom(newYDomain)
-
-          contextBrushGroup.call(brush.clear)
-        }
-      }
-    }
   }
 
   createFocusView() {
@@ -440,6 +407,18 @@ class ThreadChart extends React.Component {
             width={this.props.width}
             height='100'>
           </svg>
+          <div
+            className='tooltip'
+            ref={el => this.tooltip = el}
+            opacity={0}
+            style={{
+              backgroundColor: 'black',
+              borderRadius: '5px',
+              padding: '5px',
+              color: 'white'
+            }}
+          >
+          </div>
         </article>
         <button onClick={this.handleZoomOutClick}>zoom out</button>
         &nbsp;
