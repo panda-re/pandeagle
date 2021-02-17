@@ -171,7 +171,7 @@ class ThreadChart extends React.Component {
       // check if there is enough room to display the name of this system call
       const left = xScale(d.execution_offset) - (d.prev ? xScale(d.prev.execution_offset) : 0)
       const right = (d.next ? xScale(d.next.execution_offset) : xScale.range()[1]) - xScale(d.execution_offset)
-      return (left >= 80 && right >= 80)
+      return (left >= 40 && right >= 40)
     }
     g.selectAll('g')
       .data(data, d => d.newName)

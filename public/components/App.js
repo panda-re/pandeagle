@@ -11,7 +11,6 @@ class App extends React.Component {
 
     this.state = {
       threads: [],
-      syscall: [],
       zoomedThreads: [],
       showSysCalls: false,
       isLoading: true,
@@ -81,7 +80,18 @@ class App extends React.Component {
         .catch((err) => {
           this.databaseFail()
         })
-      this.setState({ threads: this.state.threads.map(x => Object.assign(x, syscall.find(y => y.thread_id == x.thread_id))) })
+      this.setState({
+        threads: this.state.threads
+          .map(x => ({
+            ...x,
+            syscalls: syscall
+              .find(y => y.thread_id == x.thread_id).syscalls
+              .map(z => ({
+                ...z,
+                name: z.name.replace('sys_', '')
+              }))
+          }))
+      })
     }
 
   }
