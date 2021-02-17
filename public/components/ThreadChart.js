@@ -47,7 +47,7 @@ class ThreadChart extends React.Component {
       .attr('class', 'thread-chart__context-view__slice-group')
       .attr('clip-path', 'url(#clip)')
     this.systemCallGroup = contextView.append('g')
-      .attr('class', 'thread-chart__context-view__system-call-group')
+      .attr('class', 'thread-chart__context-view__system-call')
       .attr('clip-path', 'url(#clip)')
     this.focusXAxis = focusView.append('g')
       .attr('class', 'thread-chart__focus-view__x-axis')
@@ -61,7 +61,6 @@ class ThreadChart extends React.Component {
   }
 
   componentDidUpdate() {
-    console.log('componentdidupdate')
     const { data } = this.props
 
     const newYDomain = data.filter(d => this.props.zoomedThreads.includes(d.newName)).filter(d => d.visible).map(d => d.newName)
@@ -163,27 +162,65 @@ class ThreadChart extends React.Component {
       [] :
       this.props.data.filter(d => yScale.domain().includes(d.newName))
     )
-    g.selectAll('path')
+    const showSysCall = d => {
+      // check if it is within the domain of x scale
+      const [minOffset, maxOffset] = xScale.domain()
+      if (!(minOffset <= d.execution_offset && d.execution_offset <= maxOffset)) {
+        return false
+      }
+      // check if there is enough room to display the name of this system call
+      const left = xScale(d.execution_offset) - (d.prev ? xScale(d.prev.execution_offset) : 0)
+      const right = (d.next ? xScale(d.next.execution_offset) : xScale.range()[1]) - xScale(d.execution_offset)
+      return (left >= 80 && right >= 80)
+    }
+    g.selectAll('g')
       .data(data, d => d.newName)
       .join(
-        enter => enter.append('path')
-          .attr('class', 'thread-chart__context-view__system-call-group__arrow')
+        enter => enter.append('g')
+          .attr('class', 'thread-chart__context-view__system-call__system-call-group')
           .attr('transform', d => `translate(0, ${yScale(d.newName) + yScale.bandwidth() / 2})`)
-          .attr('d', d => this.syscallArrowGenerator(d, xScale, threadSliceHeight, length))
-          .style('stroke-width', 1) // FIXME: the width of the system call arrwos is currently hard-coded as 1
-          .style('stroke', '#FF6347')
+          .call(enter => enter.append('path')
+            .attr('class', 'thread-chart__context-view__system-call__system-call-group__arrow')
+            .style('stroke-width', 1) // FIXME: the width of the system call arrwos is currently hard-coded as 1
+            .style('stroke', '#FF6347')
+            .attr('d', d => this.syscallArrowGenerator(d, xScale, threadSliceHeight, length))
+            .style('opacity', 0)
+            .transition(this.t)
+            .style('opacity', 1)),
+        update => update
+          .call(update => update.transition(this.t)
+            .attr('transform', d => `translate(0, ${yScale(d.newName) + yScale.bandwidth() / 2})`))
+          .call(update => update.select('path').transition(this.t)
+            .attr('d', d => this.syscallArrowGenerator(d, xScale, threadSliceHeight, length))),
+        exit => exit.transition(this.t)
+          .style('opacity', 0)
+          .remove())
+      .selectAll('text')
+      .data(d => d.syscalls
+        .map((x, i) => ({ ...x, prev: d.syscalls[i - 1], next: d.syscalls[i + 1] }))
+        .filter(showSysCall),
+        d => d.name)
+      .join(
+        enter => enter.append('text')
+          .attr('class', 'thread-chart__context-view__system-call__system-call-group__system-call-name')
+          .attr('x', d => xScale(d.execution_offset))
+          .attr('y', -(threadSliceHeight / 2 + length))
+          .attr('dy', '-.4em')
+          .attr('text-anchor', 'middle')
+          .style('font-size', 2)
+          .style('fill', '#808080')
+          .text(d => d.name)
           .style('opacity', 0)
           .call(enter => enter.transition(this.t)
-            .style('opacity', 1)
-          ),
-        update => update.transition(this.t)
-          .attr('d', d => this.syscallArrowGenerator(d, xScale, threadSliceHeight, length))
-          .attr('transform', d => `translate(0, ${yScale(d.newName) + yScale.bandwidth() / 2})`)
-          .selection(),
+            .style('opacity', 1)),
+        update => update
+          .call(update => update.transition(this.t)
+            .attr('x', d => xScale(d.execution_offset))),
         exit => exit.transition(this.t)
           .style('opacity', 0)
           .remove()
       )
+
   }
 
   createContextView() {
