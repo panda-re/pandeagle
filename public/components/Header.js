@@ -2,41 +2,10 @@ class Header extends React.Component {
   constructor(props) {
     super(props)
 
-    this.state = {
-      executions: [],
-      threads: [],
-      isSyscallOn: true,
-      showForm: false
+    this.handleClick = (e) => {
+      e.preventDefault()
+      this.props.onToggleSysCalls()
     }
-
-    this.handleClick = this.handleClick.bind(this)
-  }
-
-  componentDidMount() {
-    this.fetchExecutions()
-    this.fetchThreads()
-  }
-
-  fetchExecutions() {
-    d3.json('/executions')
-      .then(executions => this.setState({ executions }))
-      .catch((err) => {
-        this.props.databaseFail()
-      })
-  }
-
-  fetchThreads() {
-    d3.json('/executions/1/threadslices')
-      .then(threads => this.setState({ threads }))
-      .catch((err) => {
-        this.props.databaseFail()
-      })
-  }
-
-  handleClick(e) {
-    e.preventDefault()
-
-    this.props.onToggleSysCalls()
   }
 
   render() {
@@ -48,20 +17,15 @@ class Header extends React.Component {
         </a>
         <form className="form-inline my-2 my-lg-0">
           <select className="form-control mr-sm-2" id="processSelect">
-            {this.state.executions.map(execution =>
+            {this.props.executions.map(execution =>
               <option key={execution.execution_id} value={execution.execution_id}>{execution.name}</option>
-            )}
-          </select>
-          <select className="form-control mr-sm-2" id="threadSelect">
-            {this.state.threads.map(thread =>
-              <option key={thread.thread_id} value={thread.thread_id}>{thread.names.join(' ')}</option>
             )}
           </select>
           <a className="navbar-brand" href="#">
             System Call
           </a>
           <button onClick={this.handleClick}>
-            {!this.props.showSysCalls ? 'ON' : 'OFF'}
+            {this.props.showSysCalls ? 'OFF' : 'ON'}
           </button>
         </form>
 

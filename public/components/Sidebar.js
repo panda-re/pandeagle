@@ -69,7 +69,7 @@ class Sidebar extends React.Component {
             </li>
           )}
         </ul>
-      </nav >
+      </nav>
     )
   }
 }

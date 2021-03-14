@@ -3,19 +3,27 @@ class App extends React.Component {
     super(props)
 
     this.updateThreads = threads => this.setState({ threads })
+    this.handleZoom = newDomain => {
+      newDomain.yDomain.sort((a, b) => a.replace(/ *\([^)]*\) */g, '').localeCompare(b.replace(/ *\([^)]*\) */g, '')))
+      this.setState(prevState => ({ history: prevState.history.concat([newDomain]) }))
+    }
     this.databaseFail = () => this.setState({ databaseError: true })
     this.resetDatabase = () => this.setState({ databaseError: false })
+    this.handleZoomOut = () => {
+      this.setState(prevState => ({ history: prevState.history.slice(0, Math.max(1, prevState.history.length - 1)) }))
+    }
+    this.handleReset = () => {
+      this.setState(prevState => ({ history: [prevState.history[0]] }))
+    }
 
-    this.handleZoom = this.handleZoom.bind(this)
     this.handleToggleSysCalls = this.handleToggleSysCalls.bind(this)
 
     this.state = {
+      executions: [],
       threads: [],
-      syscall: [],
-      zoomedThreads: [],
-      showSysCalls: false,
+      history: [],
       isLoading: true,
-      updateThreads: this.updateThreads,
+      showSysCalls: false,
       databaseError: false,
     }
   }
@@ -24,28 +32,34 @@ class App extends React.Component {
     const data = await d3.json('/executions/1/threadslices')
       .catch((err) => {
         this.databaseFail()
-        this.setState({ isLoading: false })
       })
-    //const syscall = await d3.json('http://localhost:3000/executions/1/syscalls/')
 
-    if (!data) return
+    const executionsData = await d3.json('/executions')
+      .catch((err) => {
+        this.databaseFail()
+      })
+
+    if (!data || !executionsData) return
+
     let threadNames = this.renameDuplicates(data.map(data => data["names"].join(" ")))
 
     for (let i = 0; i < data.length; i++) {
       data[i].newName = threadNames[i]
-      data[i].visible = true
-      //data[i].syscalls = []
     }
 
-    data.sort((a, b) => a.newName.replace(/ *\([^)]*\) */g, '').localeCompare(b.newName.replace(/ *\([^)]*\) */g, '')))
+    const maxTime = Math.max(...data.map(t => Math.max(...t.thread_slices.map(d => d.end_execution_offset))))
+    const minTime = Math.min(...data.map(t => Math.min(...t.thread_slices.map(d => d.start_execution_offset))))
 
-    //const result = syscall.map(x => Object.assign(x, data.find(y => y.thread_id == x.thread_id)))
-    //console.log(result)
-    //console.log(data)
+    data.sort((a, b) => a.newName.replace(/ *\([^)]*\) */g, '').localeCompare(b.newName.replace(/ *\([^)]*\) */g, '')))
+    threadNames.sort((a, b) => a.replace(/ *\([^)]*\) */g, '').localeCompare(b.replace(/ *\([^)]*\) */g, '')))
 
     this.setState({
+      executions: executionsData,
       threads: data,
-      zoomedThreads: threadNames,
+      history: [{
+        yDomain: threadNames,
+        xDomain: [minTime, maxTime]
+      }],
       isLoading: false
     })
   }
@@ -53,7 +67,6 @@ class App extends React.Component {
   renameDuplicates(threadNames) {
     const nameCounts = new Map()
     const newNames = []
-    //console.log(this.state.isLoading)
 
     threadNames.forEach(name => {
       let count = nameCounts.get(name)
@@ -81,47 +94,74 @@ class App extends React.Component {
         .catch((err) => {
           this.databaseFail()
         })
-      this.setState({ threads: this.state.threads.map(x => Object.assign(x, syscall.find(y => y.thread_id == x.thread_id))) })
+      this.setState({
+        threads: this.state.threads
+          .map(x => ({
+            ...x,
+            syscalls: syscall
+              .find(y => y.thread_id == x.thread_id).syscalls
+              .map(z => ({
+                ...z,
+                name: z.name.replace('sys_', '')
+              }))
+          }))
+      })
     }
-
-  }
-
-  handleZoom(zoomedThreads) {
-    this.setState({ zoomedThreads })
   }
 
   render() {
+    const domain = this.state.history[this.state.history.length - 1];
+
+    const threadsCopy = jQuery.extend(true, [], this.state.threads);
+
+    let data = threadsCopy.filter(el => domain.yDomain.includes(el.newName))
+    data.forEach(el => {
+      el.thread_slices = el.thread_slices.filter(ts => ts.start_execution_offset <= domain.xDomain[1] && ts.end_execution_offset >= domain.xDomain[0])
+      el.thread_slices = el.thread_slices.map(ts => {
+        if (ts.start_execution_offset < domain.xDomain[0]) ts.start_execution_offset = domain.xDomain[0]
+        if (ts.end_execution_offset > domain.xDomain[1]) ts.end_execution_offset = domain.xDomain[1]
+        return ts
+      })
+      if (el.syscalls) {
+        el.syscalls = el.syscalls.filter(s => s.execution_offset <= domain.xDomain[1] && s.execution_offset >= domain.xDomain[0])
+      }
+    })
+
     return (
       <React.Fragment>
         <Header
+          executions={this.state.executions}
           showSysCalls={this.state.showSysCalls}
           onToggleSysCalls={this.handleToggleSysCalls}
-          databaseFail={this.databaseFail}
           resetDatabase={this.resetDatabase}
         />
         <div className="container">
-          {!this.state.isLoading &&
+          {/* {!this.state.isLoading &&
             <Sidebar
               data={this.state.threads}
               zoomedThreads={this.state.zoomedThreads}
               updateThreads={this.updateThreads}
-            />}
+            />} */}
           {!this.state.isLoading &&
             <main className="main">
               <ThreadChart
                 databaseError={this.state.databaseError}
-                zoomedThreads={this.state.zoomedThreads}
-                data={this.state.threads}
-                height={this.state.threads.length * 30 + 100}
+                data={data}
+                allData={this.state.threads}
+                domain={domain}
                 showSysCalls={this.state.showSysCalls}
-                width={1000}
+                onZoom={this.handleZoom}
+                onZoomOut={this.handleZoomOut}
+                onReset={this.handleReset}
+
+                height={this.state.threads.length * (30 + 10)}
+                width={window.innerWidth - 40}
                 margin={{
                   top: 10,
                   right: 20,
                   bottom: 30,
                   left: 120
                 }}
-                onZoom={this.handleZoom}
               />
             </main>}
         </div>
