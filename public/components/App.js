@@ -2,7 +2,12 @@ class App extends React.Component {
   constructor(props) {
     super(props)
 
-    this.updateThreads = threads => this.setState({ threads })
+    this.updateThreads = threads => {
+      this.setState(prevState => ({ history: prevState.history.concat([{
+        xDomain: prevState.history[prevState.history.length-1].xDomain,
+        yDomain: threads.sort((a, b) => a.replace(/ *\([^)]*\) */g, '').localeCompare(b.replace(/ *\([^)]*\) */g, '')))
+      }]) }))
+    }
     this.handleZoom = newDomain => {
       newDomain.yDomain.sort((a, b) => a.replace(/ *\([^)]*\) */g, '').localeCompare(b.replace(/ *\([^)]*\) */g, '')))
       this.setState(prevState => ({ history: prevState.history.concat([newDomain]) }))
@@ -136,12 +141,12 @@ class App extends React.Component {
           resetDatabase={this.resetDatabase}
         />
         <div className="container">
-          {/* {!this.state.isLoading &&
+          {!this.state.isLoading &&
             <Sidebar
-              data={this.state.threads}
-              zoomedThreads={this.state.zoomedThreads}
+              yDomain={domain.yDomain}
+              all={this.state.threads.map(el => el.newName)}
               updateThreads={this.updateThreads}
-            />} */}
+            />}
           {!this.state.isLoading &&
             <main className="main">
               <ThreadChart
