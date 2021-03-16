@@ -103,61 +103,72 @@ class ContextView extends React.Component {
 
     const tooltip = d3.select(this.tooltip)
 
-    this.systemCallGroup.selectAll('path')
-      .data(arrowData, d => d.syscall_id)
-      .join(
-        enter => enter.append('path')
-          .attr('class', 'thread-chart__context-view__system-call__system-call-group__arrow')
-          .style('stroke-width', 1)
-          .style('stroke', '#FF6347')
-          .attr('transform', d => `translate(0, ${yScale(data.find(el => el.thread_id == d.thread_id).newName) + yScale.bandwidth() / 2})`)
-          .style('opacity', 0)
-          .call(enter => enter.transition()
-            .attr('d', d => syscallArrowGenerator(d, xScale, threadSliceHeight, length))
-            .style('opacity', 1))
-          .on("mouseover", function (e, d) {
-            tooltip.html(d.name)
-              .style("left", e.clientX + "px")
-              .style("top", e.clientY + "px")
-              .transition()
-              .style("opacity", .9)
-          })
-          .on("mouseout", () => tooltip.transition().style("opacity", 0)),
-        update => update
-          .attr('transform', d => `translate(0, ${yScale(data.find(el => el.thread_id == d.thread_id).newName) + yScale.bandwidth() / 2})`)
-          .call(update => update.transition()
-            .attr('d', d => syscallArrowGenerator(d, xScale, threadSliceHeight, length))),
-        exit => exit.transition().style('opacity', 0).remove()
-      )
+    const systemCallGroup = this.systemCallGroup
+    let selectedSystemCall = ''
+    toggleSystemCalls()
 
-    this.systemCallGroup.selectAll('text')
-      .data(nameData, d => d.syscall_id)
-      .join(
-        enter => enter.append('text')
-          .attr('class', 'thread-chart__context-view__system-call__system-call-group__system-call-name')
-          .style('opacity', 0)
-          .call(enter => enter.transition()
+    function toggleSystemCalls() {
+      systemCallGroup.selectAll('path')
+        .data(arrowData.filter(d => selectedSystemCall === '' || d.name === selectedSystemCall), d => d.syscall_id)
+        .join(
+          enter => enter.append('path')
+            .attr('class', 'thread-chart__context-view__system-call__system-call-group__arrow')
+            .style('stroke-width', 1)
+            .style('stroke', '#FF6347')
+            .attr('transform', d => `translate(0, ${yScale(data.find(el => el.thread_id == d.thread_id).newName) + yScale.bandwidth() / 2})`)
+            .attr('d', d => syscallArrowGenerator(d, xScale, threadSliceHeight, length))
+            .style('opacity', 0)
+            .call(enter => enter.transition()
+              .style('opacity', 1))
+            .on("mouseover", function (e, d) {
+              tooltip.html(d.name)
+                .style("left", e.clientX + "px")
+                .style("top", e.clientY + "px")
+                .transition()
+                .style("opacity", .9)
+            })
+            .on("mouseout", () => tooltip.transition().style("opacity", 0)),
+          update => update
+            .attr('transform', d => `translate(0, ${yScale(data.find(el => el.thread_id == d.thread_id).newName) + yScale.bandwidth() / 2})`)
+            .call(update => update.transition()
+              .attr('d', d => syscallArrowGenerator(d, xScale, threadSliceHeight, length))),
+          exit => exit.transition().style('opacity', 0).remove()
+        )
+
+      systemCallGroup.selectAll('text')
+        .data(nameData.filter(d => selectedSystemCall === '' || d.name === selectedSystemCall), d => d.syscall_id)
+        .join(
+          enter => enter.append('text')
+            .attr('class', 'thread-chart__context-view__system-call__system-call-group__system-call-name')
             .attr('x', d => xScale(d.execution_offset))
-            .style('opacity', 1))
-          .attr('transform', d => `translate(0, ${yScale(data.find(el => el.thread_id == d.thread_id).newName) + yScale.bandwidth() / 6})`)
-          .attr('dy', '-.4em')
-          .attr('text-anchor', 'middle')
-          .style('font-size', 12)
-          .style('fill', '#808080')
-          .text(d => d.name)
-          .on("mouseover", (e, d) => {
-            tooltip.transition().style("opacity", .9);
-            tooltip.html("Syscall Args Goes here")
-              .style("left", e.clientX + "px")
-              .style("top", e.clientY + "px");
-          })
-          .on("mouseout", () => tooltip.transition().style("opacity", 0)),
-        update => update
-          .call(update => update.transition()
-            .attr('x', d => xScale(d.execution_offset)))
-          .attr('transform', d => `translate(0, ${yScale(data.find(el => el.thread_id == d.thread_id).newName) + yScale.bandwidth() / 6})`),
-        exit => exit.transition().style('opacity', 0).remove()
-      )
+            .style('opacity', 0)
+            .call(enter => enter.transition()
+              .style('opacity', 1))
+            .attr('transform', d => `translate(0, ${yScale(data.find(el => el.thread_id == d.thread_id).newName) + yScale.bandwidth() / 6})`)
+            .attr('dy', '-.4em')
+            .attr('text-anchor', 'middle')
+            .style('font-size', 12)
+            .style('fill', '#808080')
+            .text(d => d.name)
+            .style('cursor', 'pointer')
+            .on("mouseover", (e, d) => {
+              tooltip.transition().style("opacity", .9);
+              tooltip.html("Syscall Args Goes here")
+                .style("left", e.clientX + "px")
+                .style("top", e.clientY + "px");
+            })
+            .on("mouseout", () => tooltip.transition().style("opacity", 0))
+            .on('click', (e, d) => {
+              selectedSystemCall = selectedSystemCall === d.name ? '' : d.name
+              toggleSystemCalls()
+            }),
+          update => update
+            .call(update => update.transition()
+              .attr('x', d => xScale(d.execution_offset)))
+            .attr('transform', d => `translate(0, ${yScale(data.find(el => el.thread_id == d.thread_id).newName) + yScale.bandwidth() / 6})`),
+          exit => exit.transition().style('opacity', 0).remove()
+        )
+    }
   }
 
   drawThreadSlices(xScale, yScale, height) {
