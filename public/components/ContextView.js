@@ -90,14 +90,16 @@ class ContextView extends React.Component {
     const arrowData = data.map(el => el.syscalls).flat()
 
     const nameMap = new Map()
-    const nameData = data.map(el => {
-      if (el.syscalls.length < 20) {
-        nameMap.set(el.thread_id, el.syscalls)
-        return el.syscalls
-      } else {
-        return []
-      }
-    }).flat()
+    const nameData = (data.length > 5) ?
+      [] :
+      data.map(el => {
+        if (el.syscalls.length < 20) { // FIXME: Any better way to check if there is enough room to show all system call
+          nameMap.set(el.thread_id, el.syscalls)
+          return el.syscalls
+        } else {
+          return []
+        }
+      }).flat()
 
     const tooltip = d3.select(this.tooltip)
 
@@ -108,19 +110,24 @@ class ContextView extends React.Component {
           .attr('class', 'thread-chart__context-view__system-call__system-call-group__arrow')
           .style('stroke-width', 1)
           .style('stroke', '#FF6347')
-          .attr('d', d => syscallArrowGenerator(d, xScale, threadSliceHeight, length))
           .attr('transform', d => `translate(0, ${yScale(data.find(el => el.thread_id == d.thread_id).newName) + yScale.bandwidth() / 2})`)
+          .style('opacity', 0)
+          .call(enter => enter.transition()
+            .attr('d', d => syscallArrowGenerator(d, xScale, threadSliceHeight, length))
+            .style('opacity', 1))
           .on("mouseover", function (e, d) {
-            tooltip.style("opacity", .9);
             tooltip.html(d.name)
               .style("left", e.clientX + "px")
-              .style("top", e.clientY + "px");
+              .style("top", e.clientY + "px")
+              .transition()
+              .style("opacity", .9)
           })
-          .on("mouseout", () => tooltip.style("opacity", 0)),
+          .on("mouseout", () => tooltip.transition().style("opacity", 0)),
         update => update
           .attr('transform', d => `translate(0, ${yScale(data.find(el => el.thread_id == d.thread_id).newName) + yScale.bandwidth() / 2})`)
-          .attr('d', d => syscallArrowGenerator(d, xScale, threadSliceHeight, length)),
-        exit => exit.style('opacity', 0).remove()
+          .call(update => update.transition()
+            .attr('d', d => syscallArrowGenerator(d, xScale, threadSliceHeight, length))),
+        exit => exit.transition().style('opacity', 0).remove()
       )
 
     this.systemCallGroup.selectAll('text')
@@ -128,29 +135,28 @@ class ContextView extends React.Component {
       .join(
         enter => enter.append('text')
           .attr('class', 'thread-chart__context-view__system-call__system-call-group__system-call-name')
-          .attr('x', d => {
-            const syscalls = nameMap.get(d.thread_id)
-            const xDomain = this.props.domain.xDomain
-            return xScale(xDomain[0] + (xDomain[1] - xDomain[0]) / syscalls.length * syscalls.findIndex(el => el.syscall_id == d.syscall_id))
-          })
+          .style('opacity', 0)
+          .call(enter => enter.transition()
+            .attr('x', d => xScale(d.execution_offset))
+            .style('opacity', 1))
           .attr('transform', d => `translate(0, ${yScale(data.find(el => el.thread_id == d.thread_id).newName) + yScale.bandwidth() / 6})`)
           .attr('dy', '-.4em')
           .attr('text-anchor', 'middle')
           .style('font-size', 12)
           .style('fill', '#808080')
           .text(d => d.name)
-          .style('opacity', 1)
           .on("mouseover", (e, d) => {
-            tooltip.style("opacity", .9);
+            tooltip.transition().style("opacity", .9);
             tooltip.html("Syscall Args Goes here")
               .style("left", e.clientX + "px")
               .style("top", e.clientY + "px");
           })
-          .on("mouseout", () => tooltip.style("opacity", 0)),
+          .on("mouseout", () => tooltip.transition().style("opacity", 0)),
         update => update
-          .attr('x', d => xScale(d.execution_offset))
+          .call(update => update.transition()
+            .attr('x', d => xScale(d.execution_offset)))
           .attr('transform', d => `translate(0, ${yScale(data.find(el => el.thread_id == d.thread_id).newName) + yScale.bandwidth() / 6})`),
-        exit => exit.style('opacity', 0).remove()
+        exit => exit.transition().style('opacity', 0).remove()
       )
   }
 
@@ -177,14 +183,18 @@ class ContextView extends React.Component {
         enter => enter.append('path')
           .attr('class', 'thread-chart__slice-group__slice')
           .attr('transform', d => `translate(0, ${yScale(d.newName) + yScale.bandwidth() / 2})`)
-          .attr('d', d => sliceGenerator(d, xScale, height))
-          .style('fill', '#4A89DC')
-          .style('opacity', 1),
+          .style('opacity', 0)
+          .call(enter => enter.transition()
+            .attr('d', d => sliceGenerator(d, xScale, height))
+            .style('opacity', 1))
+          .style('fill', '#4A89DC'),
         update => update
-          .attr('d', d => sliceGenerator(d, xScale, height))
+          .call(update => update.transition()
+            .attr('d', d => sliceGenerator(d, xScale, height)))
           .attr('transform', d => `translate(0, ${yScale(d.newName) + yScale.bandwidth() / 2})`)
           .selection(),
         exit => exit
+          .transition()
           .style('opacity', 0)
           .remove()
       )
