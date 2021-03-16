@@ -19,6 +19,7 @@
   "homepage": "https://github.com/panda-re/pandeagle#readme",
   "dependencies": {
     "bootstrap": "^4.6.0",
+    "d3-tip": "^0.9.1",
     "express": "^4.17.1",
     "pg": "^8.4.0",
     "pug": "^3.0.0",
