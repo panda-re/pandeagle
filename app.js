@@ -75,6 +75,19 @@ app.get('/executions/:executionId/threads', (req, res) => {
         });
 });
 
+app.get('/executions/:executionId/scargs', (req, res) => {
+    conn.getScArgByExecutionId(req.params.executionId)
+        .then((exe) => {
+            res.status(200);
+            res.json(exe.rows);
+        })
+        .catch((err) => {
+            console.log(err);
+            res.status(400);
+            res.json(err);
+        });
+});
+
 app.post('/saveDBConfig', (req, res) => {
     const dbInfo = req.body;
     dbInfo.ssl = true;

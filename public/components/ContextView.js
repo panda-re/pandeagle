@@ -87,6 +87,8 @@ class ContextView extends React.Component {
       this.props.data
     )
 
+    const scargs = this.props.scargs
+
     const arrowData = data.map(el => el.syscalls).flat()
 
     const nameMap = new Map()
@@ -153,7 +155,12 @@ class ContextView extends React.Component {
             .style('cursor', 'pointer')
             .on("mouseover", (e, d) => {
               tooltip.transition().style("opacity", .9);
-              tooltip.html("Syscall Args Goes here")
+              let tooltip_html = `<ul style="list-style-type:none; padding:0" >`
+              scargs.get(d.syscall_id).map(el => el.argument_type + " " + el.value).forEach(text => {
+                tooltip_html = tooltip_html + `<li>${text}</li>`
+              });
+              tooltip_html = tooltip_html + `</ul>`
+              tooltip.html(tooltip_html)
                 .style("left", e.clientX + "px")
                 .style("top", e.clientY + "px");
             })

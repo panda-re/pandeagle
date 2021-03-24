@@ -3,10 +3,12 @@ class App extends React.Component {
     super(props)
 
     this.updateThreads = threads => {
-      this.setState(prevState => ({ history: prevState.history.concat([{
-        xDomain: prevState.history[prevState.history.length-1].xDomain,
-        yDomain: threads.sort((a, b) => a.replace(/ *\([^)]*\) */g, '').localeCompare(b.replace(/ *\([^)]*\) */g, '')))
-      }]) }))
+      this.setState(prevState => ({
+        history: prevState.history.concat([{
+          xDomain: prevState.history[prevState.history.length - 1].xDomain,
+          yDomain: threads.sort((a, b) => a.replace(/ *\([^)]*\) */g, '').localeCompare(b.replace(/ *\([^)]*\) */g, '')))
+        }])
+      }))
     }
     this.handleZoom = newDomain => {
       newDomain.yDomain.sort((a, b) => a.replace(/ *\([^)]*\) */g, '').localeCompare(b.replace(/ *\([^)]*\) */g, '')))
@@ -26,6 +28,7 @@ class App extends React.Component {
     this.state = {
       executions: [],
       threads: [],
+      scargs: [],
       history: [],
       isLoading: true,
       showSysCalls: false,
@@ -99,6 +102,10 @@ class App extends React.Component {
         .catch((err) => {
           this.databaseFail()
         })
+      const scargsTbl = await d3.json('/executions/1/scargs')
+        .catch((err) => {
+          this.databaseFail()
+        })
       this.setState({
         threads: this.state.threads
           .map(x => ({
@@ -109,7 +116,8 @@ class App extends React.Component {
                 ...z,
                 name: z.name.replace('sys_', '')
               }))
-          }))
+          })),
+        scargs: new Map(scargsTbl.map(i => [i.syscall_id, i.arguments]))
       })
     }
   }
@@ -152,6 +160,7 @@ class App extends React.Component {
               <ThreadChart
                 databaseError={this.state.databaseError}
                 data={data}
+                scargs={this.state.scargs}
                 allData={this.state.threads}
                 domain={domain}
                 showSysCalls={this.state.showSysCalls}
