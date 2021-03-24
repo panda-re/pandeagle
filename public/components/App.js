@@ -1,7 +1,7 @@
 class App extends React.Component {
   constructor(props) {
     super(props)
-
+  
     this.updateThreads = threads => {
       this.setState(prevState => ({ history: prevState.history.concat([{
         xDomain: prevState.history[prevState.history.length-1].xDomain,
@@ -19,6 +19,62 @@ class App extends React.Component {
     }
     this.handleReset = () => {
       this.setState(prevState => ({ history: [prevState.history[0]] }))
+    }
+
+    this.handleDownload = async() => {
+      let myData = {
+        allData : this.state.threads,
+        history : this.state.history,
+        domain : this.state.history[this.state.history.length - 1],
+        showSysCalls : this.state.showSysCalls,
+      
+        height: this.state.threads.length * (30 + 10),
+        width:window.innerWidth - 40,
+        margin :{
+                  top: 10,
+                  right: 20,
+                  bottom: 30,
+                  left: 120
+                }
+      }
+
+
+      const fileName = "file";
+      const json = JSON.stringify(myData);
+      const blob = new Blob([json],{type:'application/json'});
+      const href = await URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = href;
+      link.download = fileName + ".json";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+    }
+
+
+    this.handleLoad = e =>{
+        
+      const fileReader = new FileReader();
+      fileReader.readAsText(e.target.files[0], "UTF-8");
+      fileReader.onload = e => {
+        let jsonFile = JSON.parse(e.target.result);
+          this.setState(
+            {
+              allData : jsonFile.allData,
+              history : jsonFile.history,
+              domain : jsonFile.domain,
+              margin : jsonFile.margin,
+              showSysCalls : jsonFile.showSysCalls,
+    
+            });
+          
+
+          
+        }
+      
+    
+
     }
 
     this.handleToggleSysCalls = this.handleToggleSysCalls.bind(this)
@@ -158,7 +214,8 @@ class App extends React.Component {
                 onZoom={this.handleZoom}
                 onZoomOut={this.handleZoomOut}
                 onReset={this.handleReset}
-
+                onDownload={this.handleDownload}
+                onLoad = {this.handleLoad}
                 height={this.state.threads.length * (30 + 10)}
                 width={window.innerWidth - 40}
                 margin={{
