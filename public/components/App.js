@@ -1,7 +1,7 @@
 class App extends React.Component {
   constructor(props) {
     super(props)
-
+  
     this.updateThreads = threads => {
       this.setState(prevState => ({ history: prevState.history.concat([{
         xDomain: prevState.history[prevState.history.length-1].xDomain,
@@ -53,9 +53,27 @@ class App extends React.Component {
     }
 
 
-    this.handleLoad = () => {
+    this.handleLoad = e =>{
+        
+      const fileReader = new FileReader();
+      fileReader.readAsText(e.target.files[0], "UTF-8");
+      fileReader.onload = e => {
+        let jsonFile = JSON.parse(e.target.result);
+          this.setState(
+            {
+              allData : jsonFile.allData,
+              history : jsonFile.history,
+              domain : jsonFile.domain,
+              margin : jsonFile.margin,
+              showSysCalls : jsonFile.showSysCalls,
+    
+            });
+          
 
-
+          
+        }
+      
+    
 
     }
 

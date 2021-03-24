@@ -35,8 +35,10 @@ class ThreadChart extends React.Component {
         <button onClick={this.props.onReset}>reset</button>
         &nbsp;
         <button onClick={this.props.onDownload}>Download current replay</button>
-      
-        <button onClick={this.props.onLoad}>load a replay</button>
+        <a>  Load a replay:</a>
+        <input type="file"
+        onChange={this.props.onLoad} />
+        {/* <button onClick={this.props.onLoad}>load a replay</button> */}
       </div>
     )
   }
