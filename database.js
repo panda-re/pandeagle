@@ -86,6 +86,19 @@ const conn = {
                 GROUP BY t.thread_id, t.names 
                 ORDER BY thread_id ` + (!pageSize ? "" : `LIMIT $5 OFFSET $6`), (!pageSize ? [executionId, threadIds, start, end] : [executionId, threadIds, start, end, pageSize, pageSize * pageIndex]));
     },
+    getScArgByExecutionId: async function(executionId) {
+        return pool.query(
+            `SELECT sc.syscall_id, json_agg(scarg ORDER BY scarg.position) AS arguments
+                FROM syscall_arguments scarg
+                JOIN syscalls sc ON sc.syscall_id = scarg.syscall_id
+                JOIN threads t ON t.thread_id = sc.thread_id  
+                JOIN processes p ON p.process_id = t.process_id 
+                JOIN executions e ON e.execution_id = p.execution_id 
+                WHERE e.execution_id = $1
+                GROUP BY sc.syscall_id`
+                , [executionId]
+        )
+    },
     reconnect: async function (dbInfo) {
         pool.end().then(() => pool = new Pool(dbInfo));
     }

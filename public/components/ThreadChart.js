@@ -12,6 +12,7 @@ class ThreadChart extends React.Component {
         <article className='thread-chart'>
           <ContextView
             data={this.props.data}
+            scargs={this.props.scargs}
             domain={this.props.domain}
             showSysCalls={this.props.showSysCalls}
             onZoom={this.props.onZoom}
