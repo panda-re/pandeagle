@@ -72,26 +72,14 @@ class ContextView extends React.Component {
   }
 
   drawSystemCalls(xScale, yScale, threadSliceHeight, length) {
-    const syscallArrowGenerator = (d, xScale, threadSliceHeight, length) => {
-      const arrowPoint = d.execution_offset
-      const context = d3.path()
-
-      context.moveTo(xScale(arrowPoint), -(threadSliceHeight / 2 + length))
-      context.lineTo(xScale(arrowPoint), -threadSliceHeight / 2)
-
-      return context
-    }
-
     const data = (!this.props.showSysCalls ?
       [] :
       this.props.data
     )
-
     const scargs = this.props.scargs
-
     const arrowData = data.map(el => el.syscalls).flat()
-
     const nameMap = new Map()
+    // nameData will be an empty array if the space available is too cramped to display all system call names
     const nameData = (data.length > 5) ?
       [] :
       data.map(el => {
@@ -102,6 +90,20 @@ class ContextView extends React.Component {
           return []
         }
       }).flat()
+    const uniqueNames = [...new Set(nameData.map(d => d.name))]
+    const heightRange = [length, yScale.bandwidth() / 2 - threadSliceHeight / 2 - 10] // 20 = size of system call name labels
+    const lengthScale = (Array.isArray(uniqueNames) && uniqueNames.length !== 0) ?
+      d3.scalePoint(uniqueNames, heightRange) :
+      d => yScale.bandwidth() / 6 // default system call length = 1/4 yScale.bandwidth()
+    const syscallArrowGenerator = (d, xScale, threadSliceHeight) => {
+      const arrowPoint = d.execution_offset
+      const context = d3.path()
+
+      context.moveTo(xScale(arrowPoint), -(threadSliceHeight / 2 + lengthScale(d.name)))
+      context.lineTo(xScale(arrowPoint), -threadSliceHeight / 2)
+
+      return context
+    }
 
     const tooltip = d3.select(this.tooltip)
 
@@ -118,7 +120,7 @@ class ContextView extends React.Component {
             .style('stroke-width', 1)
             .style('stroke', '#FF6347')
             .attr('transform', d => `translate(0, ${yScale(data.find(el => el.thread_id == d.thread_id).newName) + yScale.bandwidth() / 2})`)
-            .attr('d', d => syscallArrowGenerator(d, xScale, threadSliceHeight, length))
+            .attr('d', d => syscallArrowGenerator(d, xScale, threadSliceHeight))
             .style('opacity', 0)
             .call(enter => enter.transition()
               .style('opacity', 1))
@@ -133,7 +135,7 @@ class ContextView extends React.Component {
           update => update
             .attr('transform', d => `translate(0, ${yScale(data.find(el => el.thread_id == d.thread_id).newName) + yScale.bandwidth() / 2})`)
             .call(update => update.transition()
-              .attr('d', d => syscallArrowGenerator(d, xScale, threadSliceHeight, length))),
+              .attr('d', d => syscallArrowGenerator(d, xScale, threadSliceHeight))),
           exit => exit.transition().style('opacity', 0).remove()
         )
 
@@ -143,11 +145,12 @@ class ContextView extends React.Component {
           enter => enter.append('text')
             .attr('class', 'thread-chart__context-view__system-call__system-call-group__system-call-name')
             .attr('x', d => xScale(d.execution_offset))
+            // .attr('debug', d => `y:${yScale(data.find(el => el.thread_id == d.thread_id).newName)}, threadsliceheight/2:${threadSliceHeight / 2},lengthScale:${lengthScale(d.name)}`)
+            .attr('y', d => yScale(data.find(el => el.thread_id == d.thread_id).newName) + yScale.bandwidth() / 2 - (threadSliceHeight / 2 + lengthScale(d.name)))
+            .attr('dy', '-.2em')
             .style('opacity', 0)
             .call(enter => enter.transition()
               .style('opacity', 1))
-            .attr('transform', d => `translate(0, ${yScale(data.find(el => el.thread_id == d.thread_id).newName) + yScale.bandwidth() / 6})`)
-            .attr('dy', '-.4em')
             .attr('text-anchor', 'middle')
             .style('font-size', 12)
             .style('fill', '#808080')
@@ -171,8 +174,8 @@ class ContextView extends React.Component {
             }),
           update => update
             .call(update => update.transition()
-              .attr('x', d => xScale(d.execution_offset)))
-            .attr('transform', d => `translate(0, ${yScale(data.find(el => el.thread_id == d.thread_id).newName) + yScale.bandwidth() / 6})`),
+              .attr('x', d => xScale(d.execution_offset))
+              .attr('y', d => yScale(data.find(el => el.thread_id == d.thread_id).newName) + yScale.bandwidth() / 2 - (threadSliceHeight / 2 + lengthScale(d.name)))),
           exit => exit.transition().style('opacity', 0).remove()
         )
     }
