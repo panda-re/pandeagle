@@ -77,6 +77,8 @@ class ContextView extends React.Component {
       this.props.data
     )
     const scargs = this.props.scargs
+    const scColor = this.props.scColor
+
     const arrowData = data.map(el => el.syscalls).flat()
     const nameMap = new Map()
     // nameData will be an empty array if the space available is too cramped to display all system call names
@@ -118,7 +120,7 @@ class ContextView extends React.Component {
           enter => enter.append('path')
             .attr('class', 'thread-chart__context-view__system-call__system-call-group__arrow')
             .style('stroke-width', 1)
-            .style('stroke', '#FF6347')
+            .style('stroke', d => scColor.get(d.name))
             .attr('transform', d => `translate(0, ${yScale(data.find(el => el.thread_id == d.thread_id).newName) + yScale.bandwidth() / 2})`)
             .attr('d', d => syscallArrowGenerator(d, xScale, threadSliceHeight))
             .style('opacity', 0)

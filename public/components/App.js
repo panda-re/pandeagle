@@ -76,6 +76,7 @@ class App extends React.Component {
       executions: [],
       threads: [],
       scargs: [],
+      scColor: [],
       history: [],
       isLoading: true,
       showSysCalls: false,
@@ -153,20 +154,62 @@ class App extends React.Component {
         .catch((err) => {
           this.databaseFail()
         })
+
+      const threadsWithSc = this.state.threads
+        .map(x => ({
+          ...x,
+          syscalls: syscall
+            .find(y => y.thread_id == x.thread_id).syscalls
+            .map(z => ({
+              ...z,
+              name: z.name.replace('sys_', '')
+            }))
+        }))
+
+      const allScName = [...new Set(threadsWithSc.map(el => el.syscalls).flat().map(el => el.name))]
+      const numOfScName = allScName.length
+      const scColor = new Map();
+
+      for (let i = 0; i < numOfScName; i++) {
+        scColor.set(allScName[i], this.HSLToRGB(360/numOfScName*i))
+      }
+
       this.setState({
-        threads: this.state.threads
-          .map(x => ({
-            ...x,
-            syscalls: syscall
-              .find(y => y.thread_id == x.thread_id).syscalls
-              .map(z => ({
-                ...z,
-                name: z.name.replace('sys_', '')
-              }))
-          })),
-        scargs: new Map(scargsTbl.map(i => [i.syscall_id, i.arguments]))
+        threads: threadsWithSc,
+        scargs: new Map(scargsTbl.map(i => [i.syscall_id, i.arguments])),
+        scColor: scColor
       })
     }
+  }
+
+  HSLToRGB(h) {
+    let x = 1 - Math.abs((h / 60) % 2 - 1), r = 0, g = 0, b = 0
+
+    if (0 <= h && h < 60) {
+      r = 1; g = x; b = 0;
+    } else if (60 <= h && h < 120) {
+      r = x; g = 1; b = 0;
+    } else if (120 <= h && h < 180) {
+      r = 0; g = 1; b = x;
+    } else if (180 <= h && h < 240) {
+      r = 0; g = x; b = 1;
+    } else if (240 <= h && h < 300) {
+      r = x; g = 0; b = 1;
+    } else if (300 <= h && h < 360) {
+      r = 1; g = 0; b = x;
+    }
+    r = Math.round(r * 255).toString(16);
+    g = Math.round(g * 255).toString(16);
+    b = Math.round(b * 255).toString(16);
+
+    if (r.length == 1)
+      r = "0" + r;
+    if (g.length == 1)
+      g = "0" + g;
+    if (b.length == 1)
+      b = "0" + b;
+
+    return "#" + r + g + b;
   }
 
   render() {
@@ -207,6 +250,7 @@ class App extends React.Component {
               <ThreadChart
                 databaseError={this.state.databaseError}
                 data={data}
+                scColor={this.state.scColor}
                 scargs={this.state.scargs}
                 allData={this.state.threads}
                 domain={domain}
