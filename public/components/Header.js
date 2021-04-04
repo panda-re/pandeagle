@@ -1,11 +1,6 @@
 class Header extends React.Component {
   constructor(props) {
     super(props)
-
-    this.handleClick = (e) => {
-      e.preventDefault()
-      this.props.onToggleSysCalls()
-    }
   }
 
   render() {
@@ -24,9 +19,7 @@ class Header extends React.Component {
           <a className="navbar-brand" href="#">
             System Call
           </a>
-          <button onClick={this.handleClick}>
-            {this.props.showSysCalls ? 'OFF' : 'ON'}
-          </button>
+          <ToggleSwitch checked={this.props.showSysCalls} onChange={this.props.onToggleSysCalls} />
         </form>
 
         <div className="col-auto ml-auto">
