@@ -241,8 +241,9 @@ class App extends React.Component {
         <div className="container">
           {!this.state.isLoading &&
             <Sidebar
-              yDomain={domain.yDomain}
-              all={this.state.threads.map(el => el.newName)}
+              displayedThreads={domain.yDomain}
+              allThreads={this.state.threads.map(el => el.newName)}
+              scColor={this.state.scColor}
               updateThreads={this.updateThreads}
             />}
           {!this.state.isLoading &&
