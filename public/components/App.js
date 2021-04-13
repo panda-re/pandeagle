@@ -70,6 +70,28 @@ class App extends React.Component {
       }
     }
 
+    this.handlePanLeft = () => {
+      const defaultXDomain = this.state.history[0].xDomain
+      const panDistance = (defaultXDomain[1] - defaultXDomain[0]) / 100
+      const { xDomain: currentXDomain, yDomain: currentYDomain } = this.state.history[this.state.history.length - 1]
+      const newXDomain = currentXDomain.map(d => d - panDistance)
+      if (newXDomain[0] < defaultXDomain[0]) {
+        return
+      }
+      this.setState(prevState => ({ history: prevState.history.concat([{ xDomain: newXDomain, yDomain: currentYDomain }]) }))
+    }
+
+    this.handlePanRight = () => {
+      const defaultXDomain = this.state.history[0].xDomain
+      const panDistance = (defaultXDomain[1] - defaultXDomain[0]) / 100
+      const { xDomain: currentXDomain, yDomain: currentYDomain } = this.state.history[this.state.history.length - 1]
+      const newXDomain = currentXDomain.map(d => d + panDistance)
+      if (newXDomain[1] > defaultXDomain[1]) {
+        return
+      }
+      this.setState(prevState => ({ history: prevState.history.concat([{ xDomain: newXDomain, yDomain: currentYDomain }]) }))
+    }
+
     this.handleToggleSysCalls = this.handleToggleSysCalls.bind(this)
 
     this.state = {
@@ -171,7 +193,7 @@ class App extends React.Component {
       const scColor = new Map();
 
       for (let i = 0; i < numOfScName; i++) {
-        scColor.set(allScName[i], this.HSLToRGB(360/numOfScName*i))
+        scColor.set(allScName[i], this.HSLToRGB(360 / numOfScName * i))
       }
 
       this.setState({
@@ -260,6 +282,8 @@ class App extends React.Component {
                 onReset={this.handleReset}
                 onDownload={this.handleDownload}
                 onLoad={this.handleLoad}
+                onPanLeft={this.handlePanLeft}
+                onPanRight={this.handlePanRight}
                 height={this.state.threads.length * (30 + 10)}
                 width={window.innerWidth - 40}
                 margin={{
