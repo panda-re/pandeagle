@@ -32,7 +32,7 @@ class ThreadChart extends React.Component {
             margin={this.props.margin}
           />
         </article>
-        <button onClick={this.props.onZoomOut}>zoom out</button>
+        <button onClick={this.props.onZoomOut}>Go Back</button>
         &nbsp;
         <button onClick={this.props.onReset}>reset</button>
         &nbsp;

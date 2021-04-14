@@ -73,11 +73,25 @@ class App extends React.Component {
     this.handlePan = (direction) => {
       const defaultXDomain = this.state.history[0].xDomain
       const { xDomain: currentXDomain, yDomain: currentYDomain } = this.state.history[this.state.history.length - 1]
+
+      // if the current view box 
+      //    touches one of the boundaries and
+      //    is attempting to move along that direction
+      // the panning operation should not be allowed
+      if ((currentXDomain[0] === defaultXDomain[0] && direction === -1) ||
+        (currentXDomain[1] === defaultXDomain[1] && direction === 1)) {
+        return
+      }
+      // else, attempts to pan to the left or right
       const panDistance = (currentXDomain[1] - currentXDomain[0]) / 5
       const newXDomain = currentXDomain.map(d => d + direction * panDistance)
-      if (defaultXDomain[0] <= newXDomain[0] && newXDomain[1] <= defaultXDomain[1]) {
-        this.setState(prevState => ({ history: prevState.history.concat([{ xDomain: newXDomain, yDomain: currentYDomain }]) }))
+      // if the new view box goes beyond one of the boundaries, snap it back to the boundary
+      if (newXDomain[0] < defaultXDomain[0]) {
+        newXDomain[0] = defaultXDomain[0]
+      } else if (defaultXDomain[1] < newXDomain[1]) {
+        newXDomain[1] = defaultXDomain[1]
       }
+      this.setState(prevState => ({ history: prevState.history.concat([{ xDomain: newXDomain, yDomain: currentYDomain }]) }))
     }
 
     this.handleToggleSysCalls = this.handleToggleSysCalls.bind(this)
