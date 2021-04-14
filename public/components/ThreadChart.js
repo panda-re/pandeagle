@@ -40,8 +40,12 @@ class ThreadChart extends React.Component {
         <a>  Load a replay:</a>
         <input type="file"
           onChange={this.props.onLoad} />
-        <button onClick={this.props.onPanLeft}>Pan Left</button>
-        <button onClick={this.props.onPanRight}>Pan Right</button>
+        {!this.props.atTopZoomLevel &&
+          <div>
+            <span className="thread-chart__pan-left" onClick={() => this.props.onPan(-1)}>&#10094;</span>
+            <span className="thread-chart__pan-right" onClick={() => this.props.onPan(1)}>&#10095;</span>
+          </div>
+        }
         {/* <button onClick={this.props.onLoad}>load a replay</button> */}
       </div>
     )

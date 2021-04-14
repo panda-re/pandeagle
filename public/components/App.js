@@ -70,26 +70,14 @@ class App extends React.Component {
       }
     }
 
-    this.handlePanLeft = () => {
+    this.handlePan = (direction) => {
       const defaultXDomain = this.state.history[0].xDomain
       const { xDomain: currentXDomain, yDomain: currentYDomain } = this.state.history[this.state.history.length - 1]
       const panDistance = (currentXDomain[1] - currentXDomain[0]) / 5
-      const newXDomain = currentXDomain.map(d => d - panDistance)
-      if (newXDomain[0] < defaultXDomain[0]) {
-        return
+      const newXDomain = currentXDomain.map(d => d + direction * panDistance)
+      if (defaultXDomain[0] <= newXDomain[0] && newXDomain[1] <= defaultXDomain[1]) {
+        this.setState(prevState => ({ history: prevState.history.concat([{ xDomain: newXDomain, yDomain: currentYDomain }]) }))
       }
-      this.setState(prevState => ({ history: prevState.history.concat([{ xDomain: newXDomain, yDomain: currentYDomain }]) }))
-    }
-
-    this.handlePanRight = () => {
-      const defaultXDomain = this.state.history[0].xDomain
-      const { xDomain: currentXDomain, yDomain: currentYDomain } = this.state.history[this.state.history.length - 1]
-      const panDistance = (currentXDomain[1] - currentXDomain[0]) / 5
-      const newXDomain = currentXDomain.map(d => d + panDistance)
-      if (newXDomain[1] > defaultXDomain[1]) {
-        return
-      }
-      this.setState(prevState => ({ history: prevState.history.concat([{ xDomain: newXDomain, yDomain: currentYDomain }]) }))
     }
 
     this.handleToggleSysCalls = this.handleToggleSysCalls.bind(this)
@@ -236,6 +224,7 @@ class App extends React.Component {
 
   render() {
     const domain = this.state.history[this.state.history.length - 1];
+    const atTopZoomLevel = this.state.history.length === 1
 
     const threadsCopy = jQuery.extend(true, [], this.state.threads);
 
@@ -282,8 +271,7 @@ class App extends React.Component {
                 onReset={this.handleReset}
                 onDownload={this.handleDownload}
                 onLoad={this.handleLoad}
-                onPanLeft={this.handlePanLeft}
-                onPanRight={this.handlePanRight}
+                onPan={this.handlePan}
                 height={this.state.threads.length * (30 + 10)}
                 width={window.innerWidth - 40}
                 margin={{
@@ -292,6 +280,7 @@ class App extends React.Component {
                   bottom: 30,
                   left: 120
                 }}
+                atTopZoomLevel={atTopZoomLevel}
               />
             </main>}
         </div>

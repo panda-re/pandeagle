@@ -88,3 +88,38 @@ input:checked+.slider:before {
 .slider.round:before {
     border-radius: 50%;
 }
+
+/* Panning control buttons */
+
+/* Adapted from https://www.w3schools.com/howto/howto_js_slideshow.asp */
+
+.thread-chart__context-view {
+    position: relative;
+}
+
+.thread-chart__pan-left, .thread-chart__pan-right {
+    position: absolute;
+    top: 50%;
+    width: auto;
+    margin-top: -22px;
+    padding: 14px;
+    cursor: pointer;
+    color: red;
+    font-size: 18px;
+    font-weight: bold;
+    transition: .2s ease;
+    border-radius: 3px;
+    user-select: none;
+}
+
+.thread-chart__pan-left {
+    left: 120px;
+}
+
+.thread-chart__pan-right {
+    right: 0;
+}
+
+.thread-chart__pan-left:hover, .thread-chart__pan-right:hover {
+    background-color: #2196F3;
+}
