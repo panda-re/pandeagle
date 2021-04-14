@@ -72,8 +72,8 @@ class App extends React.Component {
 
     this.handlePanLeft = () => {
       const defaultXDomain = this.state.history[0].xDomain
-      const panDistance = (defaultXDomain[1] - defaultXDomain[0]) / 100
       const { xDomain: currentXDomain, yDomain: currentYDomain } = this.state.history[this.state.history.length - 1]
+      const panDistance = (currentXDomain[1] - currentXDomain[0]) / 5
       const newXDomain = currentXDomain.map(d => d - panDistance)
       if (newXDomain[0] < defaultXDomain[0]) {
         return
@@ -83,8 +83,8 @@ class App extends React.Component {
 
     this.handlePanRight = () => {
       const defaultXDomain = this.state.history[0].xDomain
-      const panDistance = (defaultXDomain[1] - defaultXDomain[0]) / 100
       const { xDomain: currentXDomain, yDomain: currentYDomain } = this.state.history[this.state.history.length - 1]
+      const panDistance = (currentXDomain[1] - currentXDomain[0]) / 5
       const newXDomain = currentXDomain.map(d => d + panDistance)
       if (newXDomain[1] > defaultXDomain[1]) {
         return
