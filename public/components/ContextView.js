@@ -47,13 +47,24 @@ class ContextView extends React.Component {
             (d.start_execution_offset <= newXDomain[0] && newXDomain[1] <= d.end_execution_offset)))
           .map(d => d.newName)
 
-        // check if the selected area has any thread slice
-        // if no, do nothing
+        // zoom in if:
+        // 1. the selected area contains at least one thread slice, or if
+        // 2. the selected area is likely to contain a system call
         if (newYDomain.length !== 0) {
           this.props.onZoom({
             xDomain: newXDomain,
             yDomain: newYDomain
           })
+        } else if (this.props.showSysCalls) {
+          const threadIdx = Math.round(selection[0][1] / yScale.step())
+          const thread = yScale.domain()[threadIdx]
+
+          if (thread) {
+            this.props.onZoom({
+              xDomain: newXDomain,
+              yDomain: [thread]
+            })
+          }
         }
 
         this.brushGroup.call(brush.clear)
@@ -147,7 +158,6 @@ class ContextView extends React.Component {
           enter => enter.append('text')
             .attr('class', 'thread-chart__context-view__system-call__system-call-group__system-call-name')
             .attr('x', d => xScale(d.execution_offset))
-            // .attr('debug', d => `y:${yScale(data.find(el => el.thread_id == d.thread_id).newName)}, threadsliceheight/2:${threadSliceHeight / 2},lengthScale:${lengthScale(d.name)}`)
             .attr('y', d => yScale(data.find(el => el.thread_id == d.thread_id).newName) + yScale.bandwidth() / 2 - (threadSliceHeight / 2 + lengthScale(d.name)))
             .attr('dy', '-.2em')
             .style('opacity', 0)
