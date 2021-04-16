@@ -22,6 +22,13 @@ class App extends React.Component {
     this.handleReset = () => {
       this.setState(prevState => ({ history: [prevState.history[0]] }))
     }
+    this.toggleSc = (syscall) => {
+      const newScColor = new Map(this.state.scColor)
+      const scProp = this.state.scColor.get(syscall)
+      scProp.checked = !scProp.checked
+      newScColor.set(scProp)
+      this.setState({ scColor: newScColor })
+    }
 
     this.handleDownload = async () => {
       let myData = {
@@ -102,6 +109,7 @@ class App extends React.Component {
       scargs: [],
       scColor: [],
       history: [],
+      syscallRetrived: false,
       isLoading: true,
       showSysCalls: false,
       databaseError: false,
@@ -125,6 +133,7 @@ class App extends React.Component {
 
     for (let i = 0; i < data.length; i++) {
       data[i].newName = threadNames[i]
+      data[i].syscalls = []
     }
 
     const maxTime = Math.max(...data.map(t => Math.max(...t.thread_slices.map(d => d.end_execution_offset))))
@@ -169,7 +178,7 @@ class App extends React.Component {
   }
 
   async fetchSysCalls() {
-    if (!this.state.threads[0].hasOwnProperty('syscalls')) {
+    if (!this.state.syscallRetrived) {
       const syscall = await d3.json('/executions/1/syscalls/')
         .catch((err) => {
           this.databaseFail()
@@ -195,36 +204,46 @@ class App extends React.Component {
       const scColor = new Map();
 
       for (let i = 0; i < numOfScName; i++) {
-        scColor.set(allScName[i], this.HSLToRGB(360 / numOfScName * i))
+        scColor.set(allScName[i], {
+          color: this.HSLToRGB(360 / numOfScName * i, 100 - (i % 3) * 30, 50),
+          checked: true
+        })
       }
 
       this.setState({
         threads: threadsWithSc,
         scargs: new Map(scargsTbl.map(i => [i.syscall_id, i.arguments])),
-        scColor: scColor
+        scColor: scColor,
+        syscallRetrived: true
       })
     }
   }
 
-  HSLToRGB(h) {
-    let x = 1 - Math.abs((h / 60) % 2 - 1), r = 0, g = 0, b = 0
+  HSLToRGB(h, s, l) {
+    s = s / 100
+    l = l / 100
+    let c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = l - c / 2, r = 0, g = 0, b = 0
 
     if (0 <= h && h < 60) {
-      r = 1; g = x; b = 0;
+      r = c; g = x; b = 0;  
     } else if (60 <= h && h < 120) {
-      r = x; g = 1; b = 0;
+      r = x; g = c; b = 0;
     } else if (120 <= h && h < 180) {
-      r = 0; g = 1; b = x;
+      r = 0; g = c; b = x;
     } else if (180 <= h && h < 240) {
-      r = 0; g = x; b = 1;
+      r = 0; g = x; b = c;
     } else if (240 <= h && h < 300) {
-      r = x; g = 0; b = 1;
+      r = x; g = 0; b = c;
     } else if (300 <= h && h < 360) {
-      r = 1; g = 0; b = x;
+      r = c; g = 0; b = x;
     }
-    r = Math.round(r * 255).toString(16);
-    g = Math.round(g * 255).toString(16);
-    b = Math.round(b * 255).toString(16);
+    r = Math.round((r + m) * 255);
+    g = Math.round((g + m) * 255);
+    b = Math.round((b + m) * 255);
+  
+    r = r.toString(16);
+    g = g.toString(16);
+    b = b.toString(16);
 
     if (r.length == 1)
       r = "0" + r;
@@ -266,19 +285,22 @@ class App extends React.Component {
         <div className="container">
           {!this.state.isLoading &&
             <Sidebar
-              yDomain={domain.yDomain}
-              all={this.state.threads.map(el => el.newName)}
+              displayedThreads={domain.yDomain}
+              allThreads={this.state.threads.map(el => el.newName)}
+              displayedSyscalls={[...new Set(data.map(el => el.syscalls).flat().map(el => el.name))]}
+              scColor={this.state.scColor}
+              toggleSc={this.toggleSc}
               updateThreads={this.updateThreads}
             />}
           {!this.state.isLoading &&
             <main className="main">
               <ThreadChart
                 databaseError={this.state.databaseError}
+                allData={this.state.threads}
                 data={data}
+                domain={domain}
                 scColor={this.state.scColor}
                 scargs={this.state.scargs}
-                allData={this.state.threads}
-                domain={domain}
                 showSysCalls={this.state.showSysCalls}
                 onZoom={this.handleZoom}
                 onZoomOut={this.handleZoomOut}
