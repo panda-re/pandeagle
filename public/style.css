@@ -17,7 +17,7 @@
     height: 100%;
     overflow-y: auto;
     margin-left: -250px;
-    transition: .3s;
+    transition: .2s;
 }
 
 .sidebar li {
@@ -107,13 +107,17 @@ input:checked+.slider:before {
     color: red;
     font-size: 18px;
     font-weight: bold;
-    transition: .2s ease;
+    transition: .2s;
     border-radius: 3px;
     user-select: none;
 }
 
 .thread-chart__pan-left {
     left: 120px;
+}
+
+.sidebar.active+.main .thread-chart__pan-left {
+    left: 370px;
 }
 
 .thread-chart__pan-right {
