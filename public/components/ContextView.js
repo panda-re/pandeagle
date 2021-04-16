@@ -115,12 +115,12 @@ class ContextView extends React.Component {
 
     function toggleSystemCalls() {
       systemCallGroup.selectAll('path')
-        .data(arrowData.filter(d => selectedSystemCall === '' || d.name === selectedSystemCall), d => d.syscall_id)
+        .data(arrowData.filter(d => selectedSystemCall === '' || d.name === selectedSystemCall).filter(d => scColor.get(d.name).checked), d => d.syscall_id)
         .join(
           enter => enter.append('path')
             .attr('class', 'thread-chart__context-view__system-call__system-call-group__arrow')
             .style('stroke-width', 1)
-            .style('stroke', d => scColor.get(d.name))
+            .style('stroke', d => scColor.get(d.name).color)
             .attr('transform', d => `translate(0, ${yScale(data.find(el => el.thread_id == d.thread_id).newName) + yScale.bandwidth() / 2})`)
             .attr('d', d => syscallArrowGenerator(d, xScale, threadSliceHeight))
             .style('opacity', 0)
@@ -142,7 +142,7 @@ class ContextView extends React.Component {
         )
 
       systemCallGroup.selectAll('text')
-        .data(nameData.filter(d => selectedSystemCall === '' || d.name === selectedSystemCall), d => d.syscall_id)
+        .data(nameData.filter(d => selectedSystemCall === '' || d.name === selectedSystemCall).filter(d => scColor.get(d.name).checked), d => d.syscall_id)
         .join(
           enter => enter.append('text')
             .attr('class', 'thread-chart__context-view__system-call__system-call-group__system-call-name')
