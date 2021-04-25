@@ -26,10 +26,10 @@ let pool = new Pool({
 });
 
 const conn = {
-    getAllExecutions: async function () {
+    getAllExecutions: async function (){
         return pool.query('SELECT * FROM Executions');
     },
-    getThreadSlicesByExecutionId: async function (executionId) {
+    getThreadSlicesByExecutionId: async function (executionId){
         return pool.query(
             `SELECT t.thread_id, t.names, json_agg(ts ORDER BY start_execution_offset) as thread_slices FROM ThreadSlice ts 
                     JOIN Threads t ON ts.thread_id = t.thread_id 

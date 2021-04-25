@@ -70,6 +70,7 @@ app.get('/executions/:executionId/threads', (req, res) => {
         })
         .catch((err) => {
             console.log(err);
+            console.log("pool.idleCount: " + pool.idleCount);
             res.status(400);
             res.json(err);
         });
