@@ -1,17 +1,129 @@
-.tick text {
-    font-size: 1.4em;
+/* container */
+
+.container {
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
 }
 
-.grid-line {
-    stroke: #272727;
-    opacity: 0.2;
+/* Sidebar */
+
+.sidebar {
+    min-width: 250px;
+    max-width: 250px;
+    height: 100%;
+    overflow-y: auto;
+    margin-left: -250px;
+    transition: .2s;
 }
 
-.slice {
-    stroke: #4A89DC;
-    stroke-width: 10px;
+.sidebar li {
+    cursor: pointer;
 }
 
-.focus .slice {
-    stroke-width: 5px;
+.sidebar.active {
+    margin-left: 0;
+}
+
+/* Main */
+
+.main {
+    margin-left: 0;
+    padding: 20px;
+    background-color: #fafafa;
+}
+
+/* Toggle Switch */
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background-color: #ccc;
+    transition: .2s;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .2s;
+}
+
+input:checked+.slider {
+    background-color: #2196F3;
+}
+
+input:checked+.slider:before {
+    transform: translateX(26px);
+}
+
+.slider.round {
+    border-radius: 34px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+/* Panning control buttons */
+
+/* Adapted from https://www.w3schools.com/howto/howto_js_slideshow.asp */
+
+.thread-chart__context-view {
+    position: relative;
+}
+
+.thread-chart__pan-left, .thread-chart__pan-right {
+    position: absolute;
+    top: 50%;
+    width: auto;
+    margin-top: -22px;
+    padding: 14px;
+    cursor: pointer;
+    color: red;
+    font-size: 18px;
+    font-weight: bold;
+    transition: .2s;
+    border-radius: 3px;
+    user-select: none;
+}
+
+.thread-chart__pan-left {
+    left: 120px;
+}
+
+.sidebar.active+.main .thread-chart__pan-left {
+    left: 370px;
+}
+
+.thread-chart__pan-right {
+    right: 0;
+}
+
+.thread-chart__pan-left:hover, .thread-chart__pan-right:hover {
+    background-color: #2196F3;
 }

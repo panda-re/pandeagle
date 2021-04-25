@@ -6,26 +6,28 @@
   <script src="js/jquery-3.5.1.min.js"></script>
   <script src="js/bootstrap.min.js"></script>
   <script src="js/popper.min.js"></script>
-  <script src="js/index.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.3.0/font/bootstrap-icons.css">
   <link rel="stylesheet" href="css/bootstrap.min.css">
   <link rel="stylesheet" href="./style.css">
 </head>
 
 <body>
-  <nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <a class="navbar-brand" href="#">
-      PANDEagle
-    </a>
-    <form class="form-inline my-2 my-lg-0">
-      <select class="form-control mr-sm-2" onchange='selectProcess(this.value)' id='processSelect'>
+  <div id="root"></div>
 
-      </select>
-    </form>
-  </nav>
+  <script cross-origin src="https://d3js.org/d3.v6.js"></script>
+  <script cross-origin src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
+  <script cross-origin src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
+  <script cross-origin src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
 
-  <script src="https://d3js.org/d3.v6.min.js"></script>
+  <script type="text/babel" src="components/DatabaseForm.js"></script>
+  <script type="text/babel" src="components/ToggleSwitch.js"></script>
+  <script type="text/babel" src="components/Header.js"></script>
+  <script type="text/babel" src="components/ThreadChart.js"></script>
+  <script type="text/babel" src="components/ContextView.js"></script>
+  <script type="text/babel" src="components/FocusView.js"></script>
+  <script type="text/babel" src="components/Sidebar.js"></script>
+  <script type="text/babel" src="components/App.js"></script>
 
-  <script src="./index.js"></script>
 </body>
 
 </html>
