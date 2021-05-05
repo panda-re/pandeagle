@@ -1,5 +1,6 @@
 ## PANDeagle
 PANDeagle -- visualizing and exploring PANDA results
+Inspired from [asidstory](https://github.com/panda-re/panda/tree/master/panda/plugins/asidstory)
 
 ### Installation (via command line)
 
