@@ -1,4 +1,9 @@
 class Header extends React.Component {
+  /**
+   * Constructor of Header component
+   * 
+   * @param {HeaderProps} props 
+   */
   constructor(props) {
     super(props)
   }

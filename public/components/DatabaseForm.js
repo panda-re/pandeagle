@@ -1,4 +1,8 @@
 class DatabaseForm extends React.Component {
+  /**
+   * Handle events when a user submit the form
+   * @param {e} event 
+   */
   submitForm = (e) => {
     $.ajax({
       url: '/saveDBConfig',
