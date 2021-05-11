@@ -1,4 +1,10 @@
+/**
+ * FocusView component
+ */
 class FocusView extends React.Component {
+  /**
+   * Bind references to various subcomponents
+   */
   componentDidMount() {
     const svg = d3.select(this.svg)
     const { height, margin } = this.props
@@ -19,12 +25,18 @@ class FocusView extends React.Component {
     this.draw()
   }
 
+  /**
+   * Trigger re-rendering on props change
+   */
   componentDidUpdate() {
     // whenever thread slices data changes, this React lifecycle method will be triggered, 
     // which in turn triggers a re-render on the FocusView
     this.draw()
   }
 
+  /**
+   * Rendering function
+   */
   draw() {
     const { data, width, height, margin } = this.props
 
@@ -67,6 +79,9 @@ class FocusView extends React.Component {
     this.brushGroup.call(brush)
   }
 
+  /**
+   * Draw thread slices
+   */
   drawThreadSlices() {
     // sliceGenerator calcualtes the context, or the content of the d attribute of a path element
     // using d, the curreent thread slices
@@ -110,6 +125,9 @@ class FocusView extends React.Component {
       )
   }
 
+  /**
+   * Draw the box of currently selected area 
+   */
   drawFocusViewBox() {
     // remove the old selection box
     this.contextViewSelectedArea.select('rect').remove();
