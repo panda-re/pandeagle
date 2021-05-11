@@ -4,6 +4,17 @@ class Header extends React.Component {
    * 
    * @param {HeaderProps} props 
    */
+
+  /**
+   * The object structure of the props used by ThreadChart component
+   * 
+   * @typedef {Object} HeaderProps  
+   * @property {Execution[]} executions an array containing all the executions
+   * @property {boolean} showSysCalls a boolean indicating if the syscalls are visible
+   * @property {onToggleSysCalls} onToggleSysCalls a callback 
+   * @property {resetDatabase} resetDatabase a callback
+   * 
+   */
   constructor(props) {
     super(props)
   }
