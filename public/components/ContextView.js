@@ -1,4 +1,9 @@
 class ContextView extends React.Component {
+  /**
+   * Constructor of ContextView
+   * 
+   * Constructs a ContextView and links it to the references of its subcomponents
+   */
   componentDidMount() {
     const svg = d3.select(this.svg)
     const { height, margin, width } = this.props
@@ -21,10 +26,16 @@ class ContextView extends React.Component {
     this.draw()
   }
 
+  /**
+   * React lifecycle method which updates the ContextView component
+   */
   componentDidUpdate() {
     this.draw()
   }
 
+  /**
+   * Render the ContextView
+   */
   draw() {
     const { data, domain, width, height, margin } = this.props
 
@@ -77,11 +88,26 @@ class ContextView extends React.Component {
 
     this.brushGroup.call(brush)
 
+    // The rendering of ContextView component is divided into three stages:
+    // 1. Draw the horizontal grid lines
+    // 2. Draw the thread slices
+    // 3. Draw the system calls, if the users choose to display them
     this.drawGridLines(yScale)
     this.drawThreadSlices(xScale, yScale, threadSliceHeight)
     this.drawSystemCalls(xScale, yScale, threadSliceHeight, systemCallArrowLength)
   }
 
+  /**
+   * Renders the system calls on the ContextView
+   * 
+   * @param {Function} xScale d3 linear scale representing the x-axis
+   * @param {Function} yScale d3 band scale representing the y-axis
+   * @param {number} threadSliceHeight the hight of the thread slices, used to calculate the position of system calls
+   * @param {number} length the length of the system calls
+   * 
+   * @see {@link https://observablehq.com/@d3/d3-scalelinear}
+   * @see {@link https://observablehq.com/@d3/d3-scaleband}
+   */
   drawSystemCalls(xScale, yScale, threadSliceHeight, length) {
     const data = (!this.props.showSysCalls ?
       [] :
@@ -96,7 +122,7 @@ class ContextView extends React.Component {
     const nameData = (data.length > 5) ?
       [] :
       data.map(el => {
-        if (el.syscalls.length < 20) { // FIXME: Any better way to check if there is enough room to show all system call
+        if (el.syscalls.length < 20) { // TODO: Any better way to check if there is enough room to show all system call?
           nameMap.set(el.thread_id, el.syscalls)
           return el.syscalls
         } else {
@@ -193,6 +219,16 @@ class ContextView extends React.Component {
     }
   }
 
+  /**
+   * Renders the thread slices on the ContextView
+   * 
+   * @param {Function} xScale d3 linear scale representing the x-axis 
+   * @param {Function} yScale d3 band scale representing the y-axis
+   * @param {number} height the height of the thread slices
+   * 
+   * @see {@link https://observablehq.com/@d3/d3-scalelinear}
+   * @see {@link https://observablehq.com/@d3/d3-scaleband}
+   */
   drawThreadSlices(xScale, yScale, height) {
     const sliceGenerator = (d, xScale, height) => {
       const startAccessor = data => data['thread_slices'].map(d => d.start_execution_offset)
@@ -233,6 +269,13 @@ class ContextView extends React.Component {
       )
   }
 
+  /**
+   * Renders the grid lines of the ContextView
+   * 
+   * @param {Function} yScale d3 band scale representing the y-axis
+   * 
+   * @see {@link https://observablehq.com/@d3/d3-scaleband}
+   */
   drawGridLines(yScale) {
     const { width, margin } = this.props
     const gridLine = d3.line()([[margin.left, 0], [width - margin.right, 0]])
@@ -254,6 +297,12 @@ class ContextView extends React.Component {
       )
   }
 
+  /**
+   * A helper functions that returns the heights of the thread slices and the system calls
+   * 
+   * @param {Function} yScale d3 band scale representing the y-axis
+   * @returns {Object} an object containing the heights of the thread slices and the system calls
+   */
   getContextViewElementHeights(yScale) {
     const bandwidth = yScale.bandwidth()
     const threadSliceHeight = bandwidth / 3
