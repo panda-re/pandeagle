@@ -32,8 +32,8 @@ class Sidebar extends React.Component {
    * @typedef {Object} Thread
    * @property {string[]} names the original name of the thread
    * @property {string} newName the concatenated name of the thread
-   * @property {Syscalls[]} syscalls the system calls corresponding with this thread
-   * @property {ThreadSlice[]} thread_slices the thread slices corresponding with this thread
+   * @property {Syscalls[]} syscalls the system calls corresponding to this thread
+   * @property {ThreadSlice[]} thread_slices the thread slices corresponding to this thread
    * 
    * @see SidebarProps
    */
