@@ -1,19 +1,35 @@
+/**
+ * Header component 
+ * 
+ * Contains the control for sidebar, dropdown list for executions, a toggle button for syscall visibility, and a switch database button
+ */
 class Header extends React.Component {
   /**
-   * Constructor of Header component
+   * The object structure of an execution in the props of Header component
    * 
-   * @param {HeaderProps} props 
+   * @typedef {Object} Execution
+   * @property {number} execution_id the id of the execution
+   * @property {string} name the name of the execution
+   * @property {string} description the description of the execution
+   * @property {date} start_time the start time of the execution
+   * @property {date} end_time the end time of the execution
+   * 
+   * @see HeaderProps
    */
-
   /**
-   * The object structure of the props used by ThreadChart component
+   * The object structure of props used by Header component
    * 
    * @typedef {Object} HeaderProps  
    * @property {Execution[]} executions an array containing all the executions
    * @property {boolean} showSysCalls a boolean indicating if the syscalls are visible
-   * @property {onToggleSysCalls} onToggleSysCalls a callback 
-   * @property {resetDatabase} resetDatabase a callback
+   * @property {onToggleSysCalls} onToggleSysCalls callback that toggles the visibility of all system calls
+   * @property {resetDatabase} resetDatabase callback that resets the databaseError value to false in App 
    * 
+   */
+  /**
+   * Constructor of Header component
+   * 
+   * @param {HeaderProps} props 
    */
   constructor(props) {
     super(props)
