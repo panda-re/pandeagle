@@ -5,57 +5,68 @@
  */
 class Sidebar extends React.Component {
   /**
-   * The object structure of a system call
+   * The object structure of a system call in the props of Sidebar component
    * 
    * @typedef {Object} Syscall
    * @property {number} execution_offset the execution offset of the system call
    * @property {string} name the name of the system call
    * @property {number} syscall_id the id of the system call
    * @property {number} thread_id the id of its corresponding thread
+   * 
+   * @see SidebarProps
    */
   /**
-   * The object structure of a thread slice
+   * The object structure of a thread slice in the props of Sidebar component
    * 
    * @typedef {Object} ThreadSlice
    * @property {number} end_execution_offset the end execution offset of the thread slice
    * @property {number} start_execution_offset the start execution offset of this thread
    * @property {number} thread_id the id of its corresponding thread
    * @property {number} threadslice_id the id of this thead slice
+   * 
+   * @see SidebarProps
    */
   /**
-   * The object structure of a thread
+   * The object structure of a thread in the props of Sidebar component
    * 
    * @typedef {Object} Thread
    * @property {string[]} names the original name of the thread
    * @property {string} newName the concatenated name of the thread
    * @property {Syscalls[]} syscalls the system calls corresponding with this thread
    * @property {ThreadSlice[]} thread_slices the thread slices corresponding with this thread
+   * 
+   * @see SidebarProps
    */
   /**
-   * updateThreads callback updates the threads variable in the app state
+   * updateThreads callback updates the threads variable in the App component
    * 
    * @callback updateThreads
-   * @param {string[]} threads
+   * @param {string[]} threads the names of the visible threads
+   * 
+   * @see SidebarProps
    */
   /**
    * toggleSc callback toggles the visibility of a particular system call
-   * @param {string} syscall
+   * 
+   * @param {string} syscall the name of the system call to be shown or hidden
+   * 
+   * @see SidebarProps
    */
   /**
    * The object structure of props used by Sidebar component
    * 
    * @typedef {Object} SidebarProps
-   * @property {string[]} allThreads
-   * @property {string[]} displayedThreads
-   * @property {string[]} displayedSyscalls
-   * @property {Map} scColor
-   * @property {toggleSc} toggleSc
-   * @property {updateThreads} updateThreads
+   * @property {string[]} allThreads all the names of the threads
+   * @property {string[]} displayedThreads the names of the threads that are currently visible
+   * @property {string[]} displayedSyscalls the names of the threads that are currently visible
+   * @property {Map} scColor a map associating the names of the system calls to their states of visibility and their colors
+   * @property {toggleSc} toggleSc callback that toggles the visibility of a system call
+   * @property {updateThreads} updateThreads callback that updates the visible threads
    */
   /**
-   * React constructor 
+   * Constructor of Sidebar
    * 
-   * @param {SidebarProps} props 
+   * @param {SidebarProps} props the props of the Sidebar component
    */
   constructor(props) {
     super(props)
