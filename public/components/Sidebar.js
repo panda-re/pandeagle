@@ -1,6 +1,62 @@
+/**
+ * Sidebar component 
+ * 
+ * Allows the users to filter thread slices and system calls 
+ */
 class Sidebar extends React.Component {
-  // static contextType = ThreadListContext
-
+  /**
+   * The object structure of a system call
+   * 
+   * @typedef {Object} Syscall
+   * @property {number} execution_offset the execution offset of the system call
+   * @property {string} name the name of the system call
+   * @property {number} syscall_id the id of the system call
+   * @property {number} thread_id the id of its corresponding thread
+   */
+  /**
+   * The object structure of a thread slice
+   * 
+   * @typedef {Object} ThreadSlice
+   * @property {number} end_execution_offset the end execution offset of the thread slice
+   * @property {number} start_execution_offset the start execution offset of this thread
+   * @property {number} thread_id the id of its corresponding thread
+   * @property {number} threadslice_id the id of this thead slice
+   */
+  /**
+   * The object structure of a thread
+   * 
+   * @typedef {Object} Thread
+   * @property {string[]} names the original name of the thread
+   * @property {string} newName the concatenated name of the thread
+   * @property {Syscalls[]} syscalls the system calls corresponding with this thread
+   * @property {ThreadSlice[]} thread_slices the thread slices corresponding with this thread
+   */
+  /**
+   * updateThreads callback updates the threads variable in the app state
+   * 
+   * @callback updateThreads
+   * @param {string[]} threads
+   */
+  /**
+   * toggleSc callback toggles the visibility of a particular system call
+   * @param {string} syscall
+   */
+  /**
+   * The object structure of props used by Sidebar component
+   * 
+   * @typedef {Object} SidebarProps
+   * @property {string[]} allThreads
+   * @property {string[]} displayedThreads
+   * @property {string[]} displayedSyscalls
+   * @property {Map} scColor
+   * @property {toggleSc} toggleSc
+   * @property {updateThreads} updateThreads
+   */
+  /**
+   * React constructor 
+   * 
+   * @param {SidebarProps} props 
+   */
   constructor(props) {
     super(props)
     this.state = {
@@ -21,6 +77,10 @@ class Sidebar extends React.Component {
     })
   }
 
+  /**
+   * Handle events when a user check/uncheck a particular thread
+   * @param {string} thread 
+   */
   handleCheck(thread) {
     if (this.props.displayedThreads.includes(thread))
       this.props.updateThreads(this.props.displayedThreads.filter(el => el != thread))
@@ -61,7 +121,7 @@ class Sidebar extends React.Component {
                 </li>
               )}
             </ul>
-          </div> 
+          </div>
         }
       </nav>
     )
