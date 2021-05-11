@@ -1,7 +1,9 @@
 class App extends React.Component {
   constructor(props) {
     super(props)
-
+    /**
+    * Trigger update threads when make changes on thread parts in side bar
+    */
     this.updateThreads = threads => {
       this.setState(prevState => ({
         history: prevState.history.concat([{
@@ -10,18 +12,46 @@ class App extends React.Component {
         }])
       }))
     }
+
+    /**
+    * Trigger Zoom when Zoomed in to an area in Threadcharts.
+    */
     this.handleZoom = newDomain => {
       newDomain.yDomain.sort((a, b) => a.replace(/ *\([^)]*\) */g, '').localeCompare(b.replace(/ *\([^)]*\) */g, '')))
       this.setState(prevState => ({ history: prevState.history.concat([newDomain]) }))
     }
+
+    /**
+    * Trigger a datanase Fail state when
+    *   1. Try to obtain Threadslices but get an error
+    *   2. Try to obtain execusions but get an error
+    *   3. Try to obtain syscall data but get an error
+    *   4. Try to obtain syscall args but get an error
+    */
     this.databaseFail = () => this.setState({ databaseError: true })
+
+    /**
+    * Trigger reset database when change database in headers
+    */
     this.resetDatabase = () => this.setState({ databaseError: false })
+
+    /**
+    * Trigger Zoomout/go back when pan left/right database when click back buttom. 
+    */
     this.handleZoomOut = () => {
       this.setState(prevState => ({ history: prevState.history.slice(0, Math.max(1, prevState.history.length - 1)) }))
     }
+
+    /**
+    * Trigger Reset to original view when click the reset buttom. 
+    */
     this.handleReset = () => {
       this.setState(prevState => ({ history: [prevState.history[0]] }))
     }
+
+    /**
+    * Toggle for a single Syscall on the sider bar ( Not the header) 
+    */
     this.toggleSc = (syscall) => {
       const newScColor = new Map(this.state.scColor)
       const scProp = this.state.scColor.get(syscall)
@@ -30,6 +60,9 @@ class App extends React.Component {
       this.setState({ scColor: newScColor })
     }
 
+    /**
+    * Handle download the current data into a json file when click the download current replay buttom  
+    */
     this.handleDownload = async () => {
       let myData = {
         allData: this.state.threads,
@@ -46,7 +79,7 @@ class App extends React.Component {
           left: 120
         }
       }
-
+      // Able to change the fileName to the format that you want. currently the name is defaulted to file.
       const fileName = "file";
       const json = JSON.stringify(myData);
       const blob = new Blob([json], { type: 'application/json' });
@@ -59,7 +92,9 @@ class App extends React.Component {
       document.body.removeChild(link);
     }
 
-
+    /**
+    * Handle load the file that are downloaded 
+    */
     this.handleLoad = e => {
       const fileReader = new FileReader();
       fileReader.readAsText(e.target.files[0], "UTF-8");
@@ -76,7 +111,9 @@ class App extends React.Component {
           });
       }
     }
-
+    /**
+    * Handle the Pan left and right functions when zoomed in.
+    */
     this.handlePan = (direction) => {
       const defaultXDomain = this.state.history[0].xDomain
       const { xDomain: currentXDomain, yDomain: currentYDomain } = this.state.history[this.state.history.length - 1]
@@ -100,7 +137,9 @@ class App extends React.Component {
       }
       this.setState(prevState => ({ history: prevState.history.concat([{ xDomain: newXDomain, yDomain: currentYDomain }]) }))
     }
-
+    /**
+    * Toggle the display of all syscalls when use the slider bar on the header
+    */
     this.handleToggleSysCalls = this.handleToggleSysCalls.bind(this)
 
     this.state = {
@@ -115,8 +154,14 @@ class App extends React.Component {
       databaseError: false,
     }
   }
-
+  /**
+    * React lifecycle method.
+    */
   async componentDidMount() {
+
+    /**
+    * Obtain all the threadslices and execusions
+    */
     const data = await d3.json('/executions/1/threadslices')
       .catch((err) => {
         this.databaseFail()
@@ -128,14 +173,14 @@ class App extends React.Component {
       })
 
     if (!data || !executionsData) return
-
+    // rename duplicates if two thread have same name but different ID. rename is by adding a number on the end of the name. 
     let threadNames = this.renameDuplicates(data.map(data => data["names"].join(" ")))
 
     for (let i = 0; i < data.length; i++) {
       data[i].newName = threadNames[i]
       data[i].syscalls = []
     }
-
+    // get how large should the threadCharts have to be to contain all the information.
     const maxTime = Math.max(...data.map(t => Math.max(...t.thread_slices.map(d => d.end_execution_offset))))
     const minTime = Math.min(...data.map(t => Math.min(...t.thread_slices.map(d => d.start_execution_offset))))
 
@@ -152,7 +197,9 @@ class App extends React.Component {
       isLoading: false
     })
   }
-
+  /**
+    * Rename functions. by adding a number on the end of the name if two thread have same name but different ID
+    */
   renameDuplicates(threadNames) {
     const nameCounts = new Map()
     const newNames = []
@@ -171,7 +218,7 @@ class App extends React.Component {
 
     return newNames
   }
-
+  // The actual Toggle Syscall function. This also fetch the syscall from databases. Only when you want to see syscalls will it fatch the syscall.
   async handleToggleSysCalls() {
     await this.fetchSysCalls()
     this.setState(prevState => ({ showSysCalls: !prevState.showSysCalls }))
@@ -218,7 +265,9 @@ class App extends React.Component {
       })
     }
   }
-
+  /**
+    * Assign different syscall with a color. This function generate a unique color for a syscall.
+    */
   HSLToRGB(h, s, l) {
     s = s / 100
     l = l / 100
@@ -254,7 +303,9 @@ class App extends React.Component {
 
     return "#" + r + g + b;
   }
-
+  /**
+    * React method for generate/update all the react elements 
+    */
   render() {
     const domain = this.state.history[this.state.history.length - 1];
     const atTopZoomLevel = this.state.history.length === 1
