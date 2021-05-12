@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: App.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: App.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * App component wraps all other components and manages a single consistent state among them. 
+ */
+class App extends React.Component {
+  constructor(props) {
+    super(props)
+    /**
+    * Trigger update threads when make changes on thread parts in side bar
+    */
+    this.updateThreads = threads => {
+      this.setState(prevState => ({
+        history: prevState.history.concat([{
+          xDomain: prevState.history[prevState.history.length - 1].xDomain,
+          yDomain: threads.sort((a, b) => a.replace(/ *\([^)]*\) */g, '').localeCompare(b.replace(/ *\([^)]*\) */g, '')))
+        }])
+      }))
+    }
+
+    /**
+    * Trigger Zoom when Zoomed in to an area in Threadcharts.
+    */
+    this.handleZoom = newDomain => {
+      newDomain.yDomain.sort((a, b) => a.replace(/ *\([^)]*\) */g, '').localeCompare(b.replace(/ *\([^)]*\) */g, '')))
+      this.setState(prevState => ({ history: prevState.history.concat([newDomain]) }))
+    }
+
+    /**
+    * Trigger a datanase Fail state when
+    *   1. Try to obtain Threadslices but get an error
+    *   2. Try to obtain execusions but get an error
+    *   3. Try to obtain syscall data but get an error
+    *   4. Try to obtain syscall args but get an error
+    */
+    this.databaseFail = () => this.setState({ databaseError: true })
+
+    /**
+    * Trigger reset database when change database in headers
+    */
+    this.resetDatabase = () => this.setState({ databaseError: false })
+
+    /**
+    * Trigger Zoomout/go back when pan left/right database when click back buttom. 
+    */
+    this.handleZoomOut = () => {
+      this.setState(prevState => ({ history: prevState.history.slice(0, Math.max(1, prevState.history.length - 1)) }))
+    }
+
+    /**
+    * Trigger Reset to original view when click the reset buttom. 
+    */
+    this.handleReset = () => {
+      this.setState(prevState => ({ history: [prevState.history[0]] }))
+    }
+
+    /**
+    * Toggle for a single Syscall on the sider bar ( Not the header) 
+    */
+    this.toggleSc = (syscall) => {
+      const newScColor = new Map(this.state.scColor)
+      const scProp = this.state.scColor.get(syscall)
+      scProp.checked = !scProp.checked
+      newScColor.set(scProp)
+      this.setState({ scColor: newScColor })
+    }
+
+    /**
+    * Handle download the current data into a json file when click the download current replay buttom  
+    */
+    this.handleDownload = async () => {
+      let myData = {
+        allData: this.state.threads,
+        history: this.state.history,
+        domain: this.state.history[this.state.history.length - 1],
+        showSysCalls: this.state.showSysCalls,
+
+        height: this.state.threads.length * (30 + 10),
+        width: window.innerWidth - 40,
+        margin: {
+          top: 10,
+          right: 20,
+          bottom: 30,
+          left: 120
+        }
+      }
+      // Able to change the fileName to the format that you want. currently the name is defaulted to file.
+      const fileName = "file";
+      const json = JSON.stringify(myData);
+      const blob = new Blob([json], { type: 'application/json' });
+      const href = await URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = href;
+      link.download = fileName + ".json";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    /**
+    * Handle load the file that are downloaded 
+    */
+    this.handleLoad = e => {
+      const fileReader = new FileReader();
+      fileReader.readAsText(e.target.files[0], "UTF-8");
+      fileReader.onload = e => {
+        let jsonFile = JSON.parse(e.target.result);
+        this.setState(
+          {
+            allData: jsonFile.allData,
+            history: jsonFile.history,
+            domain: jsonFile.domain,
+            margin: jsonFile.margin,
+            showSysCalls: jsonFile.showSysCalls,
+
+          });
+      }
+    }
+    /**
+    * Handle the Pan left and right functions when zoomed in.
+    */
+    this.handlePan = (direction) => {
+      const defaultXDomain = this.state.history[0].xDomain
+      const { xDomain: currentXDomain, yDomain: currentYDomain } = this.state.history[this.state.history.length - 1]
+
+      // if the current view box 
+      //    touches one of the boundaries and
+      //    is attempting to move along that direction
+      // the panning operation should not be allowed
+      if ((currentXDomain[0] === defaultXDomain[0] &amp;&amp; direction === -1) ||
+        (currentXDomain[1] === defaultXDomain[1] &amp;&amp; direction === 1)) {
+        return
+      }
+      // else, attempts to pan to the left or right
+      const panDistance = (currentXDomain[1] - currentXDomain[0]) / 5
+      const newXDomain = currentXDomain.map(d => d + direction * panDistance)
+      // if the new view box goes beyond one of the boundaries, snap it back to the boundary
+      if (newXDomain[0] &lt; defaultXDomain[0]) {
+        newXDomain[0] = defaultXDomain[0]
+      } else if (defaultXDomain[1] &lt; newXDomain[1]) {
+        newXDomain[1] = defaultXDomain[1]
+      }
+      this.setState(prevState => ({ history: prevState.history.concat([{ xDomain: newXDomain, yDomain: currentYDomain }]) }))
+    }
+    /**
+    * Toggle the display of all syscalls when use the slider bar on the header
+    */
+    this.handleToggleSysCalls = this.handleToggleSysCalls.bind(this)
+
+    this.state = {
+      executions: [],
+      threads: [],
+      scargs: [],
+      scColor: [],
+      history: [],
+      syscallRetrived: false,
+      isLoading: true,
+      showSysCalls: false,
+      databaseError: false,
+    }
+  }
+  /**
+    * React lifecycle method.
+    */
+  async componentDidMount() {
+
+    /**
+    * Obtain all the threadslices and execusions
+    */
+    const data = await d3.json('/executions/1/threadslices')
+      .catch((err) => {
+        this.databaseFail()
+      })
+
+    const executionsData = await d3.json('/executions')
+      .catch((err) => {
+        this.databaseFail()
+      })
+
+    if (!data || !executionsData) return
+    // rename duplicates if two thread have same name but different ID. rename is by adding a number on the end of the name. 
+    let threadNames = this.renameDuplicates(data.map(data => data["names"].join(" ")))
+
+    for (let i = 0; i &lt; data.length; i++) {
+      data[i].newName = threadNames[i]
+      data[i].syscalls = []
+    }
+    // get how large should the threadCharts have to be to contain all the information.
+    const maxTime = Math.max(...data.map(t => Math.max(...t.thread_slices.map(d => d.end_execution_offset))))
+    const minTime = Math.min(...data.map(t => Math.min(...t.thread_slices.map(d => d.start_execution_offset))))
+
+    data.sort((a, b) => a.newName.replace(/ *\([^)]*\) */g, '').localeCompare(b.newName.replace(/ *\([^)]*\) */g, '')))
+    threadNames.sort((a, b) => a.replace(/ *\([^)]*\) */g, '').localeCompare(b.replace(/ *\([^)]*\) */g, '')))
+
+    this.setState({
+      executions: executionsData,
+      threads: data,
+      history: [{
+        yDomain: threadNames,
+        xDomain: [minTime, maxTime]
+      }],
+      isLoading: false
+    })
+  }
+  /**
+    * Rename functions. by adding a number on the end of the name if two thread have same name but different ID
+    */
+  renameDuplicates(threadNames) {
+    const nameCounts = new Map()
+    const newNames = []
+
+    threadNames.forEach(name => {
+      let count = nameCounts.get(name)
+      if (count == undefined) {
+        nameCounts.set(name, 1)
+        newNames.push(name)
+      } else {
+        count++
+        nameCounts.set(name, count)
+        newNames.push(name + count.toString())
+      }
+    })
+
+    return newNames
+  }
+  // The actual Toggle Syscall function. This also fetch the syscall from databases. Only when you want to see syscalls will it fatch the syscall.
+  async handleToggleSysCalls() {
+    await this.fetchSysCalls()
+    this.setState(prevState => ({ showSysCalls: !prevState.showSysCalls }))
+  }
+
+  async fetchSysCalls() {
+    if (!this.state.syscallRetrived) {
+      const syscall = await d3.json('/executions/1/syscalls/')
+        .catch((err) => {
+          this.databaseFail()
+        })
+      const scargsTbl = await d3.json('/executions/1/scargs')
+        .catch((err) => {
+          this.databaseFail()
+        })
+
+      const threadsWithSc = this.state.threads
+        .map(x => ({
+          ...x,
+          syscalls: syscall
+            .find(y => y.thread_id == x.thread_id).syscalls
+            .map(z => ({
+              ...z,
+              name: z.name.replace('sys_', '')
+            }))
+        }))
+
+      const allScName = [...new Set(threadsWithSc.map(el => el.syscalls).flat().map(el => el.name))]
+      const numOfScName = allScName.length
+      const scColor = new Map();
+
+      for (let i = 0; i &lt; numOfScName; i++) {
+        scColor.set(allScName[i], {
+          color: this.HSLToRGB(360 / numOfScName * i, 100 - (i % 3) * 30, 50),
+          checked: true
+        })
+      }
+
+      this.setState({
+        threads: threadsWithSc,
+        scargs: new Map(scargsTbl.map(i => [i.syscall_id, i.arguments])),
+        scColor: scColor,
+        syscallRetrived: true
+      })
+    }
+  }
+  /**
+    * Assign different syscall with a color. This function generate a unique color for a syscall.
+    */
+  HSLToRGB(h, s, l) {
+    s = s / 100
+    l = l / 100
+    let c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = l - c / 2, r = 0, g = 0, b = 0
+
+    if (0 &lt;= h &amp;&amp; h &lt; 60) {
+      r = c; g = x; b = 0;
+    } else if (60 &lt;= h &amp;&amp; h &lt; 120) {
+      r = x; g = c; b = 0;
+    } else if (120 &lt;= h &amp;&amp; h &lt; 180) {
+      r = 0; g = c; b = x;
+    } else if (180 &lt;= h &amp;&amp; h &lt; 240) {
+      r = 0; g = x; b = c;
+    } else if (240 &lt;= h &amp;&amp; h &lt; 300) {
+      r = x; g = 0; b = c;
+    } else if (300 &lt;= h &amp;&amp; h &lt; 360) {
+      r = c; g = 0; b = x;
+    }
+    r = Math.round((r + m) * 255);
+    g = Math.round((g + m) * 255);
+    b = Math.round((b + m) * 255);
+
+    r = r.toString(16);
+    g = g.toString(16);
+    b = b.toString(16);
+
+    if (r.length == 1)
+      r = "0" + r;
+    if (g.length == 1)
+      g = "0" + g;
+    if (b.length == 1)
+      b = "0" + b;
+
+    return "#" + r + g + b;
+  }
+  /**
+    * React method for generate/update all the react elements 
+    */
+  render() {
+    const domain = this.state.history[this.state.history.length - 1];
+    const atTopZoomLevel = this.state.history.length === 1
+
+    const threadsCopy = jQuery.extend(true, [], this.state.threads);
+
+    let data = threadsCopy.filter(el => domain.yDomain.includes(el.newName))
+    data.forEach(el => {
+      el.thread_slices = el.thread_slices.filter(ts => ts.start_execution_offset &lt;= domain.xDomain[1] &amp;&amp; ts.end_execution_offset >= domain.xDomain[0])
+      el.thread_slices = el.thread_slices.map(ts => {
+        if (ts.start_execution_offset &lt; domain.xDomain[0]) ts.start_execution_offset = domain.xDomain[0]
+        if (ts.end_execution_offset > domain.xDomain[1]) ts.end_execution_offset = domain.xDomain[1]
+        return ts
+      })
+      if (el.syscalls) {
+        el.syscalls = el.syscalls.filter(s => s.execution_offset &lt;= domain.xDomain[1] &amp;&amp; s.execution_offset >= domain.xDomain[0])
+      }
+    })
+
+    return (
+      &lt;React.Fragment>
+        &lt;Header
+          executions={this.state.executions}
+          showSysCalls={this.state.showSysCalls}
+          onToggleSysCalls={this.handleToggleSysCalls}
+          resetDatabase={this.resetDatabase}
+        />
+        &lt;div className="container">
+          {!this.state.isLoading &amp;&amp;
+            &lt;Sidebar
+              displayedThreads={domain.yDomain}
+              allThreads={this.state.threads.map(el => el.newName)}
+              displayedSyscalls={[...new Set(data.map(el => el.syscalls).flat().map(el => el.name))]}
+              scColor={this.state.scColor}
+              toggleSc={this.toggleSc}
+              updateThreads={this.updateThreads}
+            />}
+          {!this.state.isLoading &amp;&amp;
+            &lt;main className="main">
+              &lt;ThreadChart
+                databaseError={this.state.databaseError}
+                allData={this.state.threads}
+                data={data}
+                domain={domain}
+                scColor={this.state.scColor}
+                scargs={this.state.scargs}
+                showSysCalls={this.state.showSysCalls}
+                onZoom={this.handleZoom}
+                onZoomOut={this.handleZoomOut}
+                onReset={this.handleReset}
+                onDownload={this.handleDownload}
+                onLoad={this.handleLoad}
+                onPan={this.handlePan}
+                height={this.state.threads.length * (30 + 10)}
+                width={window.innerWidth - 40}
+                margin={{
+                  top: 10,
+                  right: 20,
+                  bottom: 30,
+                  left: 120
+                }}
+                atTopZoomLevel={atTopZoomLevel}
+              />
+            &lt;/main>}
+        &lt;/div>
+      &lt;/React.Fragment>
+    )
+  }
+}
+
+ReactDOM.render(&lt;App />, document.querySelector('#root'))</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="App.html">App</a></li><li><a href="ContextView.html">ContextView</a></li><li><a href="DatabaseForm.html">DatabaseForm</a></li><li><a href="FocusView.html">FocusView</a></li><li><a href="Header.html">Header</a></li><li><a href="Sidebar.html">Sidebar</a></li><li><a href="ThreadChart.html">ThreadChart</a></li><li><a href="ToggleSwitch.html">ToggleSwitch</a></li></ul><h3><a href="global.html">Global</a></h3>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.6</a> on Tue May 11 2021 23:00:24 GMT-0400 (Eastern Daylight Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

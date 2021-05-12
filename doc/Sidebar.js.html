@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: Sidebar.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: Sidebar.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * Sidebar component allows the users to filter thread slices and system calls.
+ */
+class Sidebar extends React.Component {
+  /**
+   * The object structure of a system call in the props of Sidebar component
+   * 
+   * @typedef {Object} Syscall
+   * @property {number} execution_offset the execution offset of the system call
+   * @property {string} name the name of the system call
+   * @property {number} syscall_id the id of the system call
+   * @property {number} thread_id the id of its corresponding thread
+   * 
+   * @see SidebarProps
+   */
+  /**
+   * The object structure of a thread slice in the props of Sidebar component
+   * 
+   * @typedef {Object} ThreadSlice
+   * @property {number} end_execution_offset the end execution offset of the thread slice
+   * @property {number} start_execution_offset the start execution offset of this thread
+   * @property {number} thread_id the id of its corresponding thread
+   * @property {number} threadslice_id the id of this thead slice
+   * 
+   * @see SidebarProps
+   */
+  /**
+   * The object structure of a thread in the props of Sidebar component
+   * 
+   * @typedef {Object} Thread
+   * @property {string[]} names the original name of the thread
+   * @property {string} newName the concatenated name of the thread
+   * @property {Syscalls[]} syscalls the system calls corresponding to this thread
+   * @property {ThreadSlice[]} thread_slices the thread slices corresponding to this thread
+   * 
+   * @see SidebarProps
+   */
+  /**
+   * updateThreads callback updates the threads variable in the App component
+   * 
+   * @callback updateThreads
+   * @param {string[]} threads the names of the visible threads
+   * 
+   * @see SidebarProps
+   */
+  /**
+   * toggleSc callback toggles the visibility of a particular system call
+   * 
+   * @param {string} syscall the name of the system call to be shown or hidden
+   * 
+   * @see SidebarProps
+   */
+  /**
+   * The object structure of props used by Sidebar component
+   * 
+   * @typedef {Object} SidebarProps
+   * @property {string[]} allThreads all the names of the threads
+   * @property {string[]} displayedThreads the names of the threads that are currently visible
+   * @property {string[]} displayedSyscalls the names of the threads that are currently visible
+   * @property {Map} scColor a map associating the names of the system calls to their states of visibility and their colors
+   * @property {toggleSc} toggleSc callback that toggles the visibility of a system call
+   * @property {updateThreads} updateThreads callback that updates the visible threads
+   */
+  /**
+   * Constructor of Sidebar
+   * 
+   * @param {SidebarProps} props the props of the Sidebar component
+   */
+  constructor(props) {
+    super(props)
+    this.state = {
+      threadKeyword: '',
+      syscallKeyword: ''
+    }
+
+    this.handleSearchThread = (event) => this.setState({ threadKeyword: event.target.value })
+    this.handleSearchSyscall = (event) => this.setState({ syscallKeyword: event.target.value })
+    this.handleCheck = this.handleCheck.bind(this)
+  }
+
+  componentDidMount() {
+    const sidebarToggleButton = document.querySelector('#sidebar-collapse')
+    const sidebar = document.querySelector('.sidebar')
+    sidebarToggleButton.addEventListener('click', () => {
+      sidebar.classList.toggle('active')
+    })
+  }
+
+  /**
+   * Handle events when a user check/uncheck a particular thread
+   * @param {string} thread 
+   */
+  handleCheck(thread) {
+    if (this.props.displayedThreads.includes(thread))
+      this.props.updateThreads(this.props.displayedThreads.filter(el => el != thread))
+    else
+      this.props.updateThreads(this.props.displayedThreads.concat(thread))
+  }
+
+  render() {
+    const syscallChecked = this.props.displayedSyscalls
+    const syscallNoCheck = [...this.props.scColor.keys()].filter(el => !syscallChecked.includes(el))
+
+    return (
+      &lt;nav className="sidebar">
+        &lt;form>
+          &lt;input className="search-box form-control" type="search" placeholder="Search thread..." onChange={this.handleSearchThread} value={this.state.threadKeyword} />
+        &lt;/form>
+        &lt;div className="thread-list overflow-auto" style={{ maxHeight: "40%" }}>
+          &lt;ul className="list-group list-group-flush">
+            {this.props.allThreads.filter(thread => thread.includes(this.state.threadKeyword)).map(thread =>
+              &lt;li key={thread} className="list-group-item list-group-item-action d-flex w-100 justify-content-between" onClick={(event) => this.handleCheck(thread)}>
+                &lt;span>{thread}&lt;/span>
+                &lt;input type="checkbox" checked={this.props.displayedThreads.includes(thread)} readOnly />
+              &lt;/li>
+            )}
+          &lt;/ul>
+        &lt;/div>
+
+        &lt;form>
+          &lt;input className="search-box form-control" type="search" placeholder="Search syscall..." onChange={this.handleSearchSyscall} value={this.state.syscallKeyword} />
+        &lt;/form>
+        {this.props.scColor.size &amp;&amp;
+          &lt;div className="syscall-list overflow-auto" style={{ maxHeight: "50%" }}>
+            &lt;ul className="list-group list-group-flush">
+              {syscallChecked.filter(syscall => syscall.includes(this.state.syscallKeyword)).map(syscall =>
+                &lt;li key={syscall} className="list-group-item list-group-item-action d-flex w-100 justify-content-between" onClick={(event) => this.props.toggleSc(syscall)}>
+                  &lt;span style={{ color: this.props.scColor.get(syscall).color }}>&amp;#9646;&lt;/span>&lt;span>{syscall}&lt;/span>
+                  &lt;input type="checkbox" checked={this.props.scColor.get(syscall).checked} readOnly />
+                &lt;/li>
+              )}
+            &lt;/ul>
+          &lt;/div>
+        }
+      &lt;/nav>
+    )
+  }
+}</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="App.html">App</a></li><li><a href="ContextView.html">ContextView</a></li><li><a href="DatabaseForm.html">DatabaseForm</a></li><li><a href="FocusView.html">FocusView</a></li><li><a href="Header.html">Header</a></li><li><a href="Sidebar.html">Sidebar</a></li><li><a href="ThreadChart.html">ThreadChart</a></li><li><a href="ToggleSwitch.html">ToggleSwitch</a></li></ul><h3><a href="global.html">Global</a></h3>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 3.6.6</a> on Tue May 11 2021 23:00:24 GMT-0400 (Eastern Daylight Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
