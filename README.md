@@ -1,9 +1,9 @@
-## PANDeagle
+# PANDeagle
 PANDeagle -- visualizing and exploring PANDA results
 
 This project is inspired by [asidstory](https://github.com/panda-re/panda/tree/master/panda/plugins/asidstory)
 
-### Installation (via command line)
+## Installation 
 
 Clone the repository
 ```
@@ -25,5 +25,8 @@ npm start
 ```
 Now access the application by going to http://localhost:3000 in the browser
 
-### Useful Documents
-See [doc](doc) folder
+## Documentation
+
+You can find the documentation at [index.html](doc/index.html)
+
+To re-generate the documentation in the doc folder, simply run `jsdoc public/components/ -d doc` after you clone this repo
