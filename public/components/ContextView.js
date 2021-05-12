@@ -1,3 +1,6 @@
+/**
+ * ContextView component represents the context view of the chart.
+ */
 class ContextView extends React.Component {
   /**
    * Constructor of ContextView

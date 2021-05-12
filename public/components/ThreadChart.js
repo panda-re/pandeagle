@@ -1,5 +1,5 @@
 /**
- * Thread chart component
+ * Thread chart component contains the context view and focosu view components and other control buttons.
  */
 class ThreadChart extends React.Component {
   /**

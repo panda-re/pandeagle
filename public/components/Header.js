@@ -1,7 +1,5 @@
 /**
- * Header component 
- * 
- * Contains the control for sidebar, dropdown list for executions, a toggle button for syscall visibility, and a switch database button
+ * Header component contains the control for sidebar, dropdown list for executions, a toggle button for syscall visibility, and a switch database button.
  */
 class Header extends React.Component {
   /**

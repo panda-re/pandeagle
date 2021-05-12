@@ -1,3 +1,6 @@
+/**
+ * DatabaseForm component represents the form that allows the users to switch to different replay databases.
+ */
 class DatabaseForm extends React.Component {
   /**
    * Handle events when a user submit the form
@@ -21,7 +24,7 @@ class DatabaseForm extends React.Component {
       <div id="databaseForm" className="modal" role="dialog">
         <div className="modal-dialog" role="document">
           <div className="modal-content">
-            <form className="px-2" id="dbInfo" onSubmit={(e) => {this.submitForm(e)}}>
+            <form className="px-2" id="dbInfo" onSubmit={(e) => { this.submitForm(e) }}>
               <div className="modal-header">
                 <h5 className="modal-title">Switch Database</h5>
                 <button type="button" className="close" data-dismiss="modal" aria-label="Close">

@@ -1,5 +1,5 @@
 /**
- * FocusView component
+ * FocusView component represents the focus view of the chart.
  */
 class FocusView extends React.Component {
   /**

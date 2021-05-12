@@ -1,7 +1,5 @@
 /**
- * Sidebar component 
- * 
- * Allows the users to filter thread slices and system calls 
+ * Sidebar component allows the users to filter thread slices and system calls.
  */
 class Sidebar extends React.Component {
   /**
